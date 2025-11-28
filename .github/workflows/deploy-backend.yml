@@ -72,3 +72,13 @@ jobs:
         run: |
           echo "✅ Backend deployed successfully!"
           echo "🌐 Service URL: ${{ steps.get-url.outputs.service_url }}"
+
+      - name: Trigger Vercel Deployment
+        if: github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN != ''
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+        continue-on-error: true
