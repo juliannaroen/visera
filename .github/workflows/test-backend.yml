@@ -22,28 +22,63 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for comparison
+
+      - name: Check if backend files changed
+        id: check-backend
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get list of changed files
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # For PRs, compare against the base branch
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA)
+          else
+            # For pushes, compare against previous commit
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+
+          # Check if any backend files were changed
+          if echo "$CHANGED_FILES" | grep -q "^backend/"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Backend files changed, running tests"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No backend files changed, skipping tests"
+          fi
 
       - name: Set up Python
+        if: steps.check-backend.outputs.changed == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install PDM
+        if: steps.check-backend.outputs.changed == 'true'
         uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.11"
 
       - name: Install dependencies
+        if: steps.check-backend.outputs.changed == 'true'
         working-directory: ./backend
         run: |
           pdm install -G test
 
       - name: Run tests
+        if: steps.check-backend.outputs.changed == 'true'
         working-directory: ./backend
         run: |
           pdm run test
 
       - name: Generate coverage report (optional)
+        if: steps.check-backend.outputs.changed == 'true'
         working-directory: ./backend
         run: |
           pdm run test-cov
