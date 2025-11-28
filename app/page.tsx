@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,14 +42,31 @@ export default function Home() {
       setSuccess(true);
       console.log("User created:", userData);
 
-      // Reset form
-      e.currentTarget.reset();
+      // Reset form using ref
+      if (formRef.current) {
+        formRef.current.reset();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
+        <main className="w-full max-w-md px-6">
+          <div className="rounded-2xl bg-white p-8 shadow-lg">
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">Sign Up</h1>
+            <p className="mb-8 text-sm text-gray-600">
+              Create a new account to get started.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
@@ -53,7 +76,7 @@ export default function Home() {
           <p className="mb-8 text-sm text-gray-600">
             Create a new account to get started.
           </p>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
                 {error}
