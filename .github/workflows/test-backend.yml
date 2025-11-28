@@ -44,13 +44,13 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
           fi
 
-          # Check if any backend files were changed
-          if echo "$CHANGED_FILES" | grep -q "^backend/"; then
+          # Check if any backend files or workflow file were changed
+          if echo "$CHANGED_FILES" | grep -q "^backend/" || echo "$CHANGED_FILES" | grep -q "^\.github/workflows/test-backend\.yml$"; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Backend files changed, running tests"
+            echo "Backend files or workflow file changed, running tests"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No backend files changed, skipping tests"
+            echo "No backend files or workflow file changed, skipping tests"
           fi
 
       - name: Set up Python

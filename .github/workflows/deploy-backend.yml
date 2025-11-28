@@ -1,6 +1,11 @@
 name: Deploy Backend
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-backend.yml"
   workflow_run:
     workflows: ["Test Backend"]
     types:
@@ -21,9 +26,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Only deploy if tests passed (when triggered by workflow_run)
+    # Only deploy if tests passed (when triggered by workflow_run) or when workflow file is updated
     if: |
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
 
     steps:
