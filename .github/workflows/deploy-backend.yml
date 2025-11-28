@@ -59,7 +59,7 @@ jobs:
             --source ./backend \
             --region ${{ env.REGION }} \
             --allow-unauthenticated \
-            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }},VERCEL_PROD_URL=${{ secrets.VERCEL_PROD_URL }}" \
+            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }},VERCEL_PROD_URL=${{ secrets.VERCEL_PROD_URL }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" \
             --port 8001 \
             --project ${{ env.PROJECT_ID }}
 

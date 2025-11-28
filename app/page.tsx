@@ -24,7 +24,9 @@ export default function Home() {
     const password = formData.get("password") as string;
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+      ).replace(/\/$/, "");
       const response = await fetch(`${apiUrl}/users`, {
         method: "POST",
         headers: {

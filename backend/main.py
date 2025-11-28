@@ -1,28 +1,45 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 import os
 from database import get_db
 from models import User
-from schemas import UserCreate, UserResponse
-from auth import hash_password
+from schemas import UserCreate, UserResponse, LoginRequest, LoginResponse
+from auth import hash_password, verify_password, create_access_token, verify_token
 
 app = FastAPI(title="Visera API", version="1.0.0")
 
 # Configure CORS to allow Next.js frontend
 # Get allowed origins from environment variable, default to localhost for development
-allowed_origins = os.getenv(
-    "VERCEL_PROD_URL",
-    "http://localhost:3000"
-).split(",")
+vercel_prod_url = os.getenv("VERCEL_PROD_URL", "")
+allowed_origins = []
+
+# Add production URL if provided
+if vercel_prod_url:
+    allowed_origins.extend([origin.strip() for origin in vercel_prod_url.split(",")])
+
+# Always allow localhost for development
+allowed_origins.append("http://localhost:3000")
+
+# Remove duplicates and empty strings
+allowed_origins = list(set([origin for origin in allowed_origins if origin]))
+
+# Use regex to allow all Vercel preview deployments (*.vercel.app)
+# This handles preview deployments that have different subdomains
+allow_origin_regex = r"https://.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security scheme for JWT
+security = HTTPBearer()
 
 
 @app.get("/")
