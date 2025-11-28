@@ -51,16 +51,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install PDM
-        uses: pdm-project/setup-pdm@v4
-        with:
-          python-version: "3.11"
-
       - name: Install migration dependencies
         working-directory: ./backend
         run: |
-          pdm install
-          echo "✅ Dependencies installed"
+          pip install --quiet alembic sqlalchemy psycopg2-binary python-dotenv
 
       - name: Run database migrations
         working-directory: ./backend
@@ -68,8 +62,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🔄 Running database migrations..."
-          echo "Using PDM to run alembic..."
-          pdm run alembic upgrade head
+          python -m alembic upgrade head
           echo "✅ Migrations completed successfully!"
 
       - name: Deploy to Cloud Run
