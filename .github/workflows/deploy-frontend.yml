@@ -27,6 +27,9 @@ concurrency:
 jobs:
   check-changes:
     runs-on: ubuntu-latest
+    # Skip this job if triggered by workflow_run and backend failed
+    if: |
+      github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     outputs:
       frontend-changed: ${{ steps.filter.outputs.frontend }}
       backend-changed: ${{ steps.filter.outputs.backend }}
@@ -81,11 +84,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     # Deploy if:
-    # - Triggered by workflow_run (after backend completes) AND frontend changed
+    # - Triggered by workflow_run (after backend completes SUCCESSFULLY) AND frontend changed
     # - Triggered by workflow_dispatch (manual)
     # - Triggered by push AND frontend changed AND backend did NOT change
     if: |
-      (github.event_name == 'workflow_run' && needs.check-changes.outputs.frontend-changed == 'true') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && needs.check-changes.outputs.frontend-changed == 'true') ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'push' && needs.check-changes.outputs.frontend-changed == 'true' && needs.check-changes.outputs.backend-changed == 'false')
 
