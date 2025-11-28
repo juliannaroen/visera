@@ -26,7 +26,6 @@ def upgrade() -> None:
         sa.Column('email', sa.String(), unique=True, index=True, nullable=False),
         sa.Column('hashed_password', sa.String(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), onupdate=sa.text('now()'), nullable=False),
     )
     # ### end Alembic commands ###
 
