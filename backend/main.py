@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+import os
 from database import get_db
 from models import User
 from schemas import UserCreate, UserResponse
@@ -9,9 +10,15 @@ from auth import hash_password
 app = FastAPI(title="Visera API", version="1.0.0")
 
 # Configure CORS to allow Next.js frontend
+# Get allowed origins from environment variable, default to localhost for development
+allowed_origins = os.getenv(
+    "VERCEL_PROD_URL",
+    "http://localhost:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js default port
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
