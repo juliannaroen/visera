@@ -45,10 +45,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.11"
+
       - name: Install migration dependencies
         working-directory: ./backend
         run: |
-          pip install --quiet alembic sqlalchemy psycopg2-binary python-dotenv
+          pdm install --no-self
 
       - name: Run database migrations
         working-directory: ./backend
