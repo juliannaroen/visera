@@ -61,7 +61,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🔄 Running database migrations..."
-          python -m alembic upgrade head
+          pdm run alembic upgrade head
           echo "✅ Migrations completed successfully!"
 
       - name: Deploy to Cloud Run
