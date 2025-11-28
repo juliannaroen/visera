@@ -25,9 +25,11 @@ RUN pdm install --prod --no-self && \
 # Copy application code
 COPY . .
 
-# Expose port
+# Expose port (Cloud Run will set PORT env var)
 EXPOSE 8001
 
-# Run the application using pdm
-CMD ["pdm", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Run the application
+# Cloud Run sets PORT environment variable, default to 8001 for local development
+# Use sh -c to properly expand the environment variable
+CMD sh -c "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}"
 
