@@ -1,3 +1,4 @@
+"""Security utilities for authentication and authorization"""
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
@@ -12,7 +13,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    # Generate a salt and hash the password
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')

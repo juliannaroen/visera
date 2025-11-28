@@ -2,6 +2,47 @@
 
 FastAPI backend for the Visera application.
 
+## Project Structure
+
+The backend follows a feature-based architecture with clear separation of concerns:
+
+```
+backend/
+├── main.py                # FastAPI app setup, CORS, router registration
+├── api/                   # API layer
+│   ├── deps.py            # Shared dependencies (get_current_user, etc.)
+│   └── v1/                # API version 1
+│       ├── auth.py        # Authentication routes (/auth/*)
+│       └── users.py       # User routes (/users/*)
+├── core/                  # Core utilities and configuration
+│   ├── config.py          # Application configuration (CORS, etc.)
+│   ├── database.py        # Database setup and session management
+│   └── security.py        # JWT and password hashing utilities
+├── models/                # SQLAlchemy database models
+│   └── user.py            # User model
+├── schemas/               # Pydantic schemas for request/response validation
+│   ├── auth.py            # Authentication schemas (LoginRequest, LoginResponse)
+│   └── user.py            # User schemas (UserCreate, UserResponse)
+└── services/              # Business logic layer
+    ├── auth_service.py    # Authentication business logic
+    └── user_service.py    # User business logic
+```
+
+### Architecture Overview
+
+- **API Layer** (`api/`): FastAPI routers that handle HTTP requests/responses
+- **Services Layer** (`services/`): Business logic separated from HTTP concerns
+- **Models** (`models/`): SQLAlchemy ORM models representing database tables
+- **Schemas** (`schemas/`): Pydantic models for request validation and response serialization
+- **Core** (`core/`): Shared utilities, configuration, and infrastructure code
+
+This structure makes it easy to:
+
+- Add new features (create new routers, services, models, schemas)
+- Test business logic independently of HTTP layer
+- Maintain clear separation of concerns
+- Scale as the application grows
+
 ## Prerequisites
 
 Install [pdm](https://pdm.fming.dev/):
@@ -55,7 +96,7 @@ This project uses Alembic for database migrations.
 
 ### Creating a Migration
 
-After modifying models in `models.py`, create a new migration:
+After modifying models in `models/`, create a new migration:
 
 ```bash
 # In Docker
