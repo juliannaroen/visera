@@ -1,0 +1,50 @@
+name: Test Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/test-backend.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/test-backend.yml"
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          pdm install -G test
+
+      - name: Run tests
+        working-directory: ./backend
+        run: |
+          pdm run test
+
+      - name: Generate coverage report (optional)
+        working-directory: ./backend
+        run: |
+          pdm run test-cov
+        continue-on-error: true
