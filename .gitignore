@@ -58,3 +58,7 @@ build/
 .pdm-python
 .pdm-build/
 .pdm.toml
+
+# GitHub Actions
+github-actions-key.json
+*.json.key
