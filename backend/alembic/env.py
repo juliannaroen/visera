@@ -27,7 +27,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Get database URL from environment
-database_url = os.getenv("DATABASE_URL", "postgresql://visera_user:visera_password@postgres:5432/visera_db")
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    raise ValueError("DATABASE_URL environment variable is required")
 config.set_main_option("sqlalchemy.url", database_url)
 
 # add your model's MetaData object here

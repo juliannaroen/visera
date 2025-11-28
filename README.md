@@ -69,13 +69,21 @@ Make sure PostgreSQL is running locally, then update the `DATABASE_URL` in `back
 
 ## Environment Variables
 
-### Backend (.env in backend/ directory)
+### Backend (.env in project root)
+
+Create a `.env` file in the project root with:
 
 ```
 DATABASE_URL=postgresql://visera_user:visera_password@postgres:5432/visera_db
-API_HOST=0.0.0.0
-API_PORT=8000
 ```
+
+For Google Cloud SQL, use:
+
+```
+DATABASE_URL=postgresql://user:password@cloud-sql-ip:5432/database?sslmode=require
+```
+
+The `DATABASE_URL` will be automatically loaded by docker-compose and the backend.
 
 ### Frontend
 

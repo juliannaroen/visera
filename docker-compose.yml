@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     container_name: visera-postgres
     environment:
-      POSTGRES_USER: visera_user
-      POSTGRES_PASSWORD: visera_password
-      POSTGRES_DB: visera_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: visera-backend
     environment:
-      DATABASE_URL: postgresql://visera_user:visera_password@postgres:5432/visera_db
+      DATABASE_URL: ${DATABASE_URL}
       API_HOST: 0.0.0.0
       API_PORT: 8001
     ports:

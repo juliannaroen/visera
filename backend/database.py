@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://visera_user:visera_password@postgres:5432/visera_db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required")
 
 # Create engine with connection pool settings to prevent premature connections
 engine = create_engine(
