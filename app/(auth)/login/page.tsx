@@ -2,16 +2,21 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth/hooks";
-import { apiRequest } from "@/lib/api/client";
-import type { User } from "@/lib/types/auth";
+import type { LoginRequest } from "@/lib/types/auth";
 
-export default function Home() {
+export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { login, isAuthenticated } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -26,34 +31,43 @@ export default function Home() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const credentials: LoginRequest = {
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+    };
 
     try {
-      // Create the user account
-      await apiRequest<User>("/api/v1/users", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
-      // Automatically log in the user with the same credentials
-      await login({ email, password });
-
-      // Redirect to dashboard
+      await login(credentials);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
       setIsLoading(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
+        <main className="w-full max-w-md px-6">
+          <div className="rounded-2xl bg-white p-8 shadow-lg">
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">Sign In</h1>
+            <p className="mb-8 text-sm text-gray-600">
+              Sign in to your account to continue.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
       <main className="w-full max-w-md px-6">
         <div className="rounded-2xl bg-white p-8 shadow-lg">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">Sign Up</h1>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">Sign In</h1>
           <p className="mb-8 text-sm text-gray-600">
-            Create a new account to get started.
+            Sign in to your account to continue.
           </p>
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -90,31 +104,27 @@ export default function Home() {
                 id="password"
                 name="password"
                 required
-                minLength={8}
                 disabled={isLoading}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="•••••••• (min 8 characters)"
+                placeholder="••••••••"
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Password must be at least 8 characters
-              </p>
             </div>
             <button
               type="submit"
               disabled={isLoading}
               className="w-full rounded-lg bg-rose-500 px-4 py-3 font-semibold text-white transition-colors duration-300 ease-in-out hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:bg-rose-300 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Creating Account..." : "Sign Up"}
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
           <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{" "}
-            <a
-              href="/login"
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/"
               className="font-medium text-rose-500 hover:text-rose-600"
             >
-              Sign in
-            </a>
+              Sign up
+            </Link>
           </p>
         </div>
       </main>
