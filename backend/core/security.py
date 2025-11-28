@@ -1,6 +1,7 @@
 """Security utilities for authentication and authorization"""
 import bcrypt
 import jwt
+from jwt.exceptions import PyJWTError, ExpiredSignatureError
 from datetime import datetime, timedelta
 from typing import Optional
 import os
@@ -50,8 +51,8 @@ def verify_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except jwt.ExpiredSignatureError:
+    except ExpiredSignatureError:
         return None
-    except jwt.JWTError:
+    except PyJWTError:
         return None
 

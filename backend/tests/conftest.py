@@ -1,9 +1,12 @@
 """Shared pytest fixtures"""
+import os
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from core.database import Base
+from core.database import Base, get_db
+from main import app
 
 
 # Use in-memory SQLite for testing (fast, no external dependencies)
@@ -35,4 +38,26 @@ def test_session(test_engine):
     finally:
         session.rollback()
         session.close()
+
+
+@pytest.fixture(scope="function")
+def test_client(test_session):
+    """Create a test client with database dependency override"""
+    # Set JWT_SECRET_KEY for testing if not already set
+    if not os.getenv("JWT_SECRET_KEY"):
+        os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+
+    def override_get_db():
+        try:
+            yield test_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    with TestClient(app) as client:
+        yield client
+
+    # Clean up dependency override
+    app.dependency_overrides.clear()
 
