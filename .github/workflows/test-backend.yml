@@ -28,6 +28,7 @@ jobs:
       - name: Check if backend files changed
         id: check-backend
         run: |
+          set -e
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
             exit 0
@@ -69,17 +70,20 @@ jobs:
         if: steps.check-backend.outputs.changed == 'true'
         working-directory: ./backend
         run: |
+          set -e
           pdm install -G test
 
       - name: Run tests
-        if: steps.check-backend.outputs.changed == 'true'
+        if: steps.check-backend.outputs.changed == 'true' && success()
         working-directory: ./backend
         run: |
+          set -e
           pdm run test
 
       - name: Generate coverage report (optional)
-        if: steps.check-backend.outputs.changed == 'true'
+        if: steps.check-backend.outputs.changed == 'true' && success()
         working-directory: ./backend
         run: |
+          set -e
           pdm run test-cov
         continue-on-error: true

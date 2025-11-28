@@ -54,6 +54,7 @@ jobs:
       - name: Install migration dependencies
         working-directory: ./backend
         run: |
+          set -e
           pip install --quiet alembic sqlalchemy psycopg2-binary python-dotenv
 
       - name: Run database migrations
@@ -61,12 +62,15 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          set -e
           echo "🔄 Running database migrations..."
           python -m alembic upgrade head
           echo "✅ Migrations completed successfully!"
 
       - name: Deploy to Cloud Run
+        if: success()
         run: |
+          set -e
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --source ./backend \
             --region ${{ env.REGION }} \
@@ -76,8 +80,10 @@ jobs:
             --project ${{ env.PROJECT_ID }}
 
       - name: Get Service URL
+        if: success()
         id: get-url
         run: |
+          set -e
           URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
             --region ${{ env.REGION }} \
             --format 'value(status.url)' \
@@ -85,6 +91,8 @@ jobs:
           echo "service_url=$URL" >> $GITHUB_OUTPUT
 
       - name: Output Service URL
+        if: success()
         run: |
+          set -e
           echo "✅ Backend deployed successfully!"
           echo "🌐 Service URL: ${{ steps.get-url.outputs.service_url }}"
