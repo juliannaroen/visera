@@ -37,8 +37,8 @@ version = { source = "file", path = "pyproject.toml" }
 
 [tool.pdm.scripts]
 dev = "uvicorn main:app --reload --host 0.0.0.0 --port 8000"
-test = "pytest"
-test-cov = "pytest --cov=. --cov-report=html --cov-report=term"
+test = "python -m pytest"
+test-cov = "python -m pytest --cov=. --cov-report=html --cov-report=term"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
