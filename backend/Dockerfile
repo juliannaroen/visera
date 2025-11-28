@@ -18,7 +18,9 @@ ENV PATH="/root/.local/bin:$PATH"
 COPY pyproject.toml pdm.lock* ./
 
 # Install dependencies using pdm (including test dependencies for testing in container)
-RUN pdm install --no-self -G test
+# Also install with pip as backup to ensure all dependencies are available
+RUN pdm install --no-self -G test && \
+    python -m pip install --no-cache-dir uvicorn[standard] fastapi sqlalchemy psycopg2-binary python-dotenv pydantic pydantic-settings alembic passlib[bcrypt] email-validator bcrypt==4.2.0 pyjwt==2.9.0 "python-jose[cryptography]==3.3.0" pytest pytest-asyncio pytest-cov httpx faker
 
 # Copy application code
 COPY . .
