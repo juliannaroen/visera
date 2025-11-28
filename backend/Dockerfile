@@ -20,7 +20,7 @@ COPY pyproject.toml pdm.lock* ./
 # Install dependencies using pdm
 RUN pdm install --prod --no-self && \
     # Ensure uvicorn is available in PATH
-    python -m pip install --no-cache-dir uvicorn[standard] fastapi sqlalchemy psycopg2-binary python-dotenv pydantic pydantic-settings alembic passlib[bcrypt]
+    python -m pip install --no-cache-dir uvicorn[standard] fastapi sqlalchemy psycopg2-binary python-dotenv pydantic pydantic-settings alembic passlib[bcrypt] email-validator
 
 # Copy application code
 COPY . .
