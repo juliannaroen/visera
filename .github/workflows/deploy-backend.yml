@@ -74,7 +74,7 @@ jobs:
           echo "🌐 Service URL: ${{ steps.get-url.outputs.service_url }}"
 
       - name: Trigger Vercel Deployment
-        if: github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN != ''
+        if: github.ref == 'refs/heads/main'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
