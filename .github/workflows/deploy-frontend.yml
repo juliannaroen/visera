@@ -84,11 +84,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     # Deploy if:
-    # - Triggered by workflow_run (after backend completes SUCCESSFULLY) AND frontend changed
+    # - Triggered by workflow_run (after backend completes SUCCESSFULLY) - always deploy after backend to ensure sync
     # - Triggered by workflow_dispatch (manual)
-    # - Triggered by push AND frontend changed AND backend did NOT change
+    # - Triggered by push AND frontend changed AND backend did NOT change (safe: no new backend features to worry about)
+    #
+    # Note: We always deploy frontend after backend changes to ensure frontend is in sync with backend,
+    # even if frontend code didn't change. This prevents issues where frontend might reference
+    # backend features that were just deployed.
     if: |
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && needs.check-changes.outputs.frontend-changed == 'true') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'push' && needs.check-changes.outputs.frontend-changed == 'true' && needs.check-changes.outputs.backend-changed == 'false')
 
