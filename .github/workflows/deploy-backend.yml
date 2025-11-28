@@ -59,7 +59,8 @@ jobs:
       - name: Install migration dependencies
         working-directory: ./backend
         run: |
-          pdm install --no-self
+          pdm install
+          echo "✅ Dependencies installed"
 
       - name: Run database migrations
         working-directory: ./backend
@@ -67,6 +68,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "🔄 Running database migrations..."
+          echo "Using PDM to run alembic..."
           pdm run alembic upgrade head
           echo "✅ Migrations completed successfully!"
 
