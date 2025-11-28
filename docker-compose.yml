@@ -23,8 +23,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: visera-backend
+    env_file:
+      - .env # Loads all variables from .env file (DATABASE_URL, JWT_SECRET_KEY, etc.)
     environment:
-      DATABASE_URL: ${DATABASE_URL}
       API_HOST: 0.0.0.0
       API_PORT: 8001
     ports:
