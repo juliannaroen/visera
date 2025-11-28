@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:backend": "bash scripts/test-backend.sh",
+    "test:backend:cov": "bash scripts/test-backend.sh --cov=. --cov-report=html --cov-report=term"
   },
   "dependencies": {
     "next": "16.0.4",

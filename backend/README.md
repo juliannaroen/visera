@@ -90,6 +90,101 @@ pdm add package-name
 pdm add -dG dev package-name
 ```
 
+## Testing
+
+This project uses pytest for testing with a comprehensive test structure.
+
+### Test Structure
+
+```
+tests/
+├── unit/              # Unit tests (no database)
+│   └── models/       # Model tests
+├── integration/       # Integration tests (with database)
+├── fixtures/          # Test data factories
+└── utils/             # Test utilities
+```
+
+### Running Tests
+
+#### Local Development (Recommended for fast iteration)
+
+**Option 1: From project root (recommended)**
+
+```bash
+# Run all tests
+pnpm test:backend
+
+# Run with coverage
+pnpm test:backend:cov
+
+# Run specific test file (pass arguments)
+pnpm test:backend -- tests/unit/models/test_user.py
+```
+
+**Option 2: From backend directory**
+
+```bash
+cd backend
+
+# Run all tests
+pdm run test
+
+# Run with coverage report
+pdm run test-cov
+
+# Run specific test file
+pdm run pytest tests/unit/models/test_user.py
+
+# Run with verbose output
+pdm run pytest -v
+```
+
+#### Docker (Matches production environment)
+
+```bash
+# Make sure backend container is running
+docker-compose up -d backend
+
+# Run tests in the container (using system Python since PDM_NO_VENV=1)
+docker exec visera-backend python -m pytest tests/
+
+# Run with coverage
+docker exec visera-backend python -m pytest --cov=. --cov-report=term tests/
+
+# Or use pdm (if test dependencies are installed)
+docker exec visera-backend pdm run test
+```
+
+**Note**: The Dockerfile installs test dependencies, but uses `PDM_NO_VENV=1` (system Python). Use `python -m pytest` directly for more reliable execution in Docker.
+
+### Test Dependencies
+
+Test dependencies are installed as an optional dependency group:
+
+```bash
+# Install test dependencies (if not already installed)
+pdm install -G test
+```
+
+### Writing Tests
+
+- **Unit tests**: Test individual functions/classes in isolation
+- **Integration tests**: Test API endpoints with database
+- **Fixtures**: Use `tests/fixtures/factories.py` for test data
+- **Database**: Tests use in-memory SQLite (fast, isolated)
+
+Example test structure:
+
+```python
+# tests/unit/models/test_user.py
+def test_user_creation(test_session):
+    user = User(email="test@example.com", ...)
+    test_session.add(user)
+    test_session.commit()
+    assert user.id is not None
+```
+
 ## Database Migrations
 
 This project uses Alembic for database migrations.
