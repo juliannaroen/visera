@@ -13,7 +13,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U visera_user"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-visera_user} -d ${POSTGRES_DB:-visera_db}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,7 +39,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    command: sh -c "chmod +x /app/run_migrations.sh && /app/run_migrations.sh && python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+    command: sh -c "pdm install --no-self -G test && chmod +x /app/run_migrations.sh && /app/run_migrations.sh && pdm run uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
     # Note: To run tests in Docker, use: docker exec visera-backend pdm run test
 
   frontend:
