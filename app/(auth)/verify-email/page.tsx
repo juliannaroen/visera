@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { authApi } from "@/lib/api/auth";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -151,4 +151,27 @@ export default function VerifyEmailPage() {
   }
 
   return null;
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
+          <main className="w-full max-w-md px-6">
+            <div className="rounded-2xl bg-white p-8 shadow-lg">
+              <div className="mb-4 flex justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-rose-500 border-t-transparent"></div>
+              </div>
+              <h1 className="mb-2 text-center text-3xl font-bold text-gray-900">
+                Loading...
+              </h1>
+            </div>
+          </main>
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
+  );
 }
