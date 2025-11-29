@@ -46,3 +46,20 @@ def get_current_user(
 
     return user
 
+
+def get_verified_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Dependency to get the current authenticated user with verified email.
+    Requires both authentication and email verification.
+    Can be used in endpoints that require verified users.
+    """
+    if not current_user.is_email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email verification required. Please verify your email address.",
+        )
+
+    return current_user
+

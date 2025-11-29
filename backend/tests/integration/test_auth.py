@@ -122,13 +122,13 @@ class TestGetCurrentUser:
     """Test suite for GET /api/v1/auth/me endpoint"""
 
     def test_get_current_user_success(self, test_client, test_session):
-        """Test getting current user info with valid token"""
+        """Test getting current user info with valid token and verified email"""
         # Set JWT_SECRET_KEY if not set
         if not os.getenv("JWT_SECRET_KEY"):
             os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
 
-        # Create a user
-        user = create_user_model(test_session, email="test@example.com")
+        # Create a verified user
+        user = create_user_model(test_session, email="test@example.com", is_email_verified=True)
 
         # Create a valid token
         token = create_access_token(data={"sub": str(user.id), "email": user.email})
@@ -143,6 +143,29 @@ class TestGetCurrentUser:
         assert data["id"] == user.id
         assert data["email"] == user.email
         assert "created_at" in data
+        assert data["is_email_verified"] is True
+
+    def test_get_current_user_unverified_email(self, test_client, test_session):
+        """Test getting current user info with unverified email"""
+        # Set JWT_SECRET_KEY if not set
+        if not os.getenv("JWT_SECRET_KEY"):
+            os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+
+        # Create an unverified user
+        user = create_user_model(test_session, email="test@example.com", is_email_verified=False)
+
+        # Create a valid token
+        token = create_access_token(data={"sub": str(user.id), "email": user.email})
+
+        response = test_client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        data = response.json()
+        assert "detail" in data
+        assert "verification" in data["detail"].lower() or "verified" in data["detail"].lower()
 
     def test_get_current_user_no_token(self, test_client, test_session):
         """Test getting current user without token"""

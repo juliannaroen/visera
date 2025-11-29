@@ -7,7 +7,7 @@ from schemas.user import UserResponse
 from services.auth_service import authenticate_user
 from services.user_service import verify_user_email
 from services.auth_service import send_verification_email
-from api.deps import get_current_user
+from api.deps import get_current_user, get_verified_user
 from core.security import verify_email_verification_token
 from models.user import User
 
@@ -31,10 +31,10 @@ async def login(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
+async def get_current_user_info(current_user: User = Depends(get_verified_user)):
     """
     Get the current authenticated user's information.
-    Requires a valid JWT token in the Authorization header.
+    Requires a valid JWT token in the Authorization header and verified email.
     """
     return UserResponse(
         id=current_user.id,
