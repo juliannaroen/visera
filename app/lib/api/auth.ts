@@ -12,4 +12,11 @@ export const authApi = {
   getCurrentUser: async (): Promise<User> => {
     return apiRequest<User>("/api/v1/auth/me");
   },
+
+  verifyEmail: async (token: string): Promise<User> => {
+    return apiRequest<User>("/api/v1/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+  },
 };

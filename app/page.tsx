@@ -1,16 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth/hooks";
-import { apiRequest } from "@/lib/api/client";
-import type { User } from "@/lib/types/auth";
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-  const { login, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   // Redirect if already authenticated
@@ -20,101 +16,75 @@ export default function Home() {
     }
   }, [isAuthenticated, router]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
-    try {
-      // Create the user account
-      await apiRequest<User>("/api/v1/users", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
-      // Automatically log in the user with the same credentials
-      await login({ email, password });
-
-      // Redirect to dashboard
-      router.push("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
-      <main className="w-full max-w-md px-6">
-        <div className="rounded-2xl bg-white p-8 shadow-lg">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">Sign Up</h1>
-          <p className="mb-8 text-sm text-gray-600">
-            Create a new account to get started.
+      <main className="w-full max-w-4xl px-6 py-12">
+        <div className="text-center mb-12">
+          <h1 className="mb-4 text-5xl font-bold text-gray-900">
+            Welcome to Visera
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Your platform for managing and organizing your digital life.
           </p>
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                {error}
-              </div>
-            )}
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-medium text-gray-700"
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto">
+          <Link
+            href="/signup"
+            className="group rounded-2xl bg-white p-8 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100 group-hover:bg-rose-200 transition-colors">
+              <svg
+                className="h-6 w-6 text-rose-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                disabled={isLoading}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="you@example.com"
-              />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                />
+              </svg>
             </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-medium text-gray-700"
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">
+              Get Started
+            </h2>
+            <p className="text-gray-600">
+              Create a new account and start your journey with us today.
+            </p>
+          </Link>
+
+          <Link
+            href="/login"
+            className="group rounded-2xl bg-white p-8 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100 group-hover:bg-rose-200 transition-colors">
+              <svg
+                className="h-6 w-6 text-rose-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                minLength={8}
-                disabled={isLoading}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="•••••••• (min 8 characters)"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Password must be at least 8 characters
-              </p>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                />
+              </svg>
             </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-lg bg-rose-500 px-4 py-3 font-semibold text-white transition-colors duration-300 ease-in-out hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:bg-rose-300 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Creating Account..." : "Sign Up"}
-            </button>
-          </form>
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{" "}
-            <a
-              href="/login"
-              className="font-medium text-rose-500 hover:text-rose-600"
-            >
-              Sign in
-            </a>
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">Sign In</h2>
+            <p className="text-gray-600">
+              Already have an account? Sign in to continue where you left off.
+            </p>
+          </Link>
+        </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-sm text-gray-500">
+            By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
       </main>
