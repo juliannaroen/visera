@@ -76,14 +76,22 @@ jobs:
       - name: Run tests
         if: steps.check-backend.outputs.changed == 'true' && success()
         working-directory: ./backend
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         run: |
           set -e
+          # Set default test secret if not provided
+          export JWT_SECRET_KEY="${JWT_SECRET_KEY:-test-secret-key-for-testing-only}"
           pdm run test
 
       - name: Generate coverage report (optional)
         if: steps.check-backend.outputs.changed == 'true' && success()
         working-directory: ./backend
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         run: |
           set -e
+          # Set default test secret if not provided
+          export JWT_SECRET_KEY="${JWT_SECRET_KEY:-test-secret-key-for-testing-only}"
           pdm run test-cov
         continue-on-error: true

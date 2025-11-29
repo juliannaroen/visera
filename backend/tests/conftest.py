@@ -1,5 +1,11 @@
 """Shared pytest fixtures"""
 import os
+
+# Set JWT_SECRET_KEY before any imports that might use it
+# This ensures core.security.SECRET_KEY is set correctly at import time
+if not os.getenv("JWT_SECRET_KEY"):
+    os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -43,10 +49,6 @@ def test_session(test_engine):
 @pytest.fixture(scope="function")
 def test_client(test_session):
     """Create a test client with database dependency override"""
-    # Set JWT_SECRET_KEY for testing if not already set
-    if not os.getenv("JWT_SECRET_KEY"):
-        os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
-
     def override_get_db():
         try:
             yield test_session

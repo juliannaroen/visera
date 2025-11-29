@@ -4,7 +4,6 @@ from fastapi import HTTPException, status
 from models.user import User
 from schemas.user import UserCreate, UserResponse
 from core.security import hash_password
-from services.auth_service import send_verification_email
 
 
 def create_user(db: Session, user_data: UserCreate) -> UserResponse:
@@ -31,6 +30,8 @@ def create_user(db: Session, user_data: UserCreate) -> UserResponse:
     db.refresh(new_user)
 
     # Send verification email
+    # Import here to avoid circular import
+    from services.auth_service import send_verification_email
     try:
         send_verification_email(db, new_user.id)
     except Exception as e:
