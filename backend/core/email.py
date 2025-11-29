@@ -15,12 +15,23 @@ def get_smtp_config():
     - Gmail: SMTP_HOST=smtp.gmail.com, SMTP_USER=your-email, SMTP_PASSWORD=app-password
     - Mailgun: SMTP_HOST=smtp.mailgun.org, SMTP_USER=your-username, SMTP_PASSWORD=your-password
     """
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    # Debug logging (will show in Cloud Run logs)
+    if not smtp_user:
+        print("WARNING: SMTP_USER environment variable is not set")
+    if not smtp_password:
+        print("WARNING: SMTP_PASSWORD environment variable is not set")
+    else:
+        print(f"DEBUG: SMTP_PASSWORD is set (length: {len(smtp_password)})")
+
     return {
         "host": os.getenv("SMTP_HOST", "smtp.sendgrid.net"),  # Default to SendGrid
         "port": int(os.getenv("SMTP_PORT", "587")),
-        "user": os.getenv("SMTP_USER"),
-        "password": os.getenv("SMTP_PASSWORD"),
-        "from_email": os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USER")),
+        "user": smtp_user,
+        "password": smtp_password,
+        "from_email": os.getenv("SMTP_FROM_EMAIL", smtp_user),
     }
 
 
