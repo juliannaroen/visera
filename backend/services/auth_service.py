@@ -6,12 +6,13 @@ from schemas.auth import LoginRequest, LoginResponse
 from schemas.user import UserResponse
 from core.security import verify_password, create_access_token, create_email_verification_token
 from core.email import send_verification_email as send_verification_email_core
+from services.user_service import get_user_by_email
 
 
 def authenticate_user(db: Session, login_data: LoginRequest) -> LoginResponse:
     """Authenticate a user and return JWT token"""
     # Find user by email
-    user = db.query(User).filter(User.email == login_data.email).first()
+    user = get_user_by_email(db, login_data.email)
 
     if not user:
         raise HTTPException(

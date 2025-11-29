@@ -10,7 +10,7 @@ from services.auth_service import send_verification_email
 def create_user(db: Session, user_data: UserCreate) -> UserResponse:
     """Create a new user account"""
     # Check if user with this email already exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    existing_user = get_user_by_email(db, user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
