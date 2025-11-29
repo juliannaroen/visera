@@ -450,10 +450,11 @@ class TestSendVerificationEmail:
         assert "already verified" in data["detail"].lower()
 
     def test_send_verification_email_no_token(self, test_client, test_session):
-        """Test sending verification email without token"""
+        """Test sending verification email without token or email parameter"""
         response = test_client.post("/api/v1/auth/send-verification-email")
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
         assert "detail" in data
+        assert "email" in data["detail"].lower() or "authentication" in data["detail"].lower()
 
