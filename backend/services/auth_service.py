@@ -44,7 +44,7 @@ def authenticate_user(db: Session, login_data: LoginRequest) -> LoginResponse:
 
 def send_verification_email(db: Session, user_id: int) -> bool:
     """
-    Send email verification email to user.
+    Send email verification email to user by ID.
     Can be used for initial send or resend.
     Part of the authentication/identity verification flow.
     """
@@ -52,6 +52,30 @@ def send_verification_email(db: Session, user_id: int) -> bool:
 
     if not user:
         return False
+
+    # Don't send if already verified
+    if user.is_email_verified:
+        return False
+
+    # Generate verification token and send email
+    try:
+        verification_token = create_email_verification_token(user.id, user.email)
+        send_verification_email_core(user.email, verification_token)
+        return True
+    except Exception as e:
+        print(f"Failed to send verification email: {e}")
+        return False
+
+
+def send_verification_email_by_email(db: Session, email: str) -> bool:
+    """
+    Send email verification email to user by email address.
+    Used when user is not authenticated.
+    """
+    user = get_user_by_email(db, email)
+
+    if not user:
+        return False  # Don't reveal if user exists or not
 
     # Don't send if already verified
     if user.is_email_verified:

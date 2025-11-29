@@ -41,7 +41,7 @@ export default function DashboardLayout({
     // If user is not verified, redirect (only once)
     if (!user.is_email_verified && !hasRedirected.current) {
       hasRedirected.current = true;
-      router.push("/resend-verification");
+      router.push("/send-verification-email");
     }
   }, [isAuthenticated, isLoading, user, router]);
 

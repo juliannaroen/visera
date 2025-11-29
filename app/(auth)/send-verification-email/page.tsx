@@ -2,37 +2,44 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { authApi } from "@/lib/api/auth";
 import { useAuth } from "@/lib/auth/hooks";
 
-export default function ResendVerificationPage() {
+export default function SendVerificationEmailPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const { user, isAuthenticated, refreshUser, logout } = useAuth();
+  const [email, setEmail] = useState("");
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Redirect if not authenticated
+  // Only redirect if authenticated and verified
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-    } else if (user?.is_email_verified) {
+    if (isAuthenticated && user?.is_email_verified) {
       router.push("/dashboard");
     }
   }, [isAuthenticated, user, router]);
 
-  const handleResend = async () => {
+  // Pre-fill email if user is logged in
+  useEffect(() => {
+    if (isAuthenticated && user?.email && !email) {
+      setEmail(user.email);
+    }
+  }, [isAuthenticated, user, email]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      await authApi.sendVerificationEmail();
+      // Send verification email (with email parameter if not authenticated)
+      await authApi.sendVerificationEmail(
+        isAuthenticated && user ? undefined : email
+      );
       setSuccess(true);
-      // Refresh user data after a short delay to check if they verified
-      setTimeout(async () => {
-        await refreshUser();
-      }, 2000);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to send verification email"
@@ -41,23 +48,6 @@ export default function ResendVerificationPage() {
       setIsLoading(false);
     }
   };
-
-  // Show loading while checking auth state
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-rose-500 border-t-transparent mx-auto"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If already verified, redirect (handled by useEffect)
-  if (user.is_email_verified) {
-    return null;
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
@@ -75,7 +65,7 @@ export default function ResendVerificationPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
             </div>
@@ -84,15 +74,19 @@ export default function ResendVerificationPage() {
             Verify Your Email
           </h1>
           <p className="mb-6 text-center text-sm text-gray-600">
-            Please verify your email address to access the dashboard.
+            {isAuthenticated && user
+              ? "Please verify your email address to access the dashboard."
+              : "Enter your email address to receive a verification email."}
           </p>
 
-          <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
-            <p className="text-sm text-blue-800">
-              We sent a verification email to{" "}
-              <span className="font-semibold">{user.email}</span>
-            </p>
-          </div>
+          {isAuthenticated && user && (
+            <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <p className="text-sm text-blue-800">
+                We sent a verification email to{" "}
+                <span className="font-semibold">{user.email}</span>
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
@@ -106,28 +100,48 @@ export default function ResendVerificationPage() {
             </div>
           )}
 
-          <div className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {!isAuthenticated && (
+              <div>
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="you@example.com"
+                />
+              </div>
+            )}
+
             <button
-              onClick={handleResend}
-              disabled={isLoading || success}
+              type="submit"
+              disabled={isLoading}
               className="w-full rounded-lg bg-rose-500 px-4 py-3 font-semibold text-white transition-colors duration-300 ease-in-out hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:bg-rose-300 disabled:cursor-not-allowed"
             >
               {isLoading
                 ? "Sending..."
                 : success
-                ? "Email Sent!"
-                : "Resend Verification Email"}
+                ? "Email Sent! Click to Send Again"
+                : "Send Verification Email"}
             </button>
 
-            <button
-              onClick={() => {
-                logout();
-              }}
+            <Link
+              href="/login"
               className="block w-full text-center text-sm font-medium text-gray-600 hover:text-gray-900"
             >
               Back to Login
-            </button>
-          </div>
+            </Link>
+          </form>
         </div>
       </main>
     </div>

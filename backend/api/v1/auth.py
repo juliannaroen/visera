@@ -2,12 +2,12 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
-from schemas.auth import LoginRequest, LoginResponse, VerifyEmailRequest
+from schemas.auth import LoginRequest, LoginResponse, SendVerificationEmailRequest, VerifyEmailRequest
 from schemas.user import UserResponse
 from services.auth_service import authenticate_user
 from services.user_service import verify_user_email
-from services.auth_service import send_verification_email
-from api.deps import get_current_user, get_verified_user
+from services.auth_service import send_verification_email, send_verification_email_by_email
+from api.deps import get_current_user, get_verified_user, get_optional_current_user
 from core.security import verify_email_verification_token
 from models.user import User
 
@@ -101,21 +101,30 @@ async def verify_email(
 
 @router.post("/send-verification-email", status_code=status.HTTP_200_OK)
 async def send_verification_email_endpoint(
-    current_user: User = Depends(get_current_user),
+    request: SendVerificationEmailRequest | None = None,
+    current_user: User | None = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Send email verification email to the current authenticated user.
-    Can be used for initial send or resend.
-    Requires a valid JWT token in the Authorization header.
+    Send email verification email.
+    Can be used with authentication (sends to current user) or with email parameter (no auth required).
     """
-    if current_user.is_email_verified:
+    if current_user:
+        # Authenticated user
+        if current_user.is_email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already verified"
+            )
+        success = send_verification_email(db, current_user.id)
+    elif request and request.email:
+        # Not authenticated, using email from request body
+        success = send_verification_email_by_email(db, request.email)
+    else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email is already verified"
+            detail="Either authentication required or email must be provided in request body"
         )
-
-    success = send_verification_email(db, current_user.id)
 
     if not success:
         raise HTTPException(

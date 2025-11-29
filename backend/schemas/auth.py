@@ -17,3 +17,7 @@ class LoginResponse(BaseModel):
 class VerifyEmailRequest(BaseModel):
     token: str = Field(..., description="Email verification token")
 
+
+class SendVerificationEmailRequest(BaseModel):
+    email: EmailStr = Field(..., description="Email address to send verification to")
+

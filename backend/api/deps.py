@@ -47,6 +47,31 @@ def get_current_user(
     return user
 
 
+def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
+    db: Session = Depends(get_db)
+) -> User | None:
+    """
+    Optional dependency to get the current authenticated user from JWT token.
+    Returns None if not authenticated instead of raising an exception.
+    """
+    if credentials is None:
+        return None
+
+    token = credentials.credentials
+    payload = verify_token(token)
+
+    if payload is None:
+        return None
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        return None
+
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    return user
+
+
 def get_verified_user(
     current_user: User = Depends(get_current_user)
 ) -> User:
