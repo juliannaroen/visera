@@ -1,5 +1,5 @@
 """Authentication schemas"""
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from schemas.user import UserResponse
 
 
@@ -12,4 +12,8 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(..., description="Email verification token")
 

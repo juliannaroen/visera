@@ -56,3 +56,37 @@ def verify_token(token: str) -> Optional[dict]:
     except PyJWTError:
         return None
 
+
+def create_email_verification_token(user_id: int, user_email: str) -> str:
+    """Create a JWT token for email verification (expires in 24 hours)"""
+    if not SECRET_KEY:
+        raise ValueError("JWT_SECRET_KEY environment variable must be set")
+
+    expire = datetime.utcnow() + timedelta(hours=24)
+    to_encode = {
+        "sub": str(user_id),
+        "email": user_email,
+        "type": "email_verification",
+        "exp": expire,
+        "iat": datetime.utcnow()
+    }
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_email_verification_token(token: str) -> Optional[dict]:
+    """Verify and decode an email verification token"""
+    if not SECRET_KEY:
+        return None
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Verify this is an email verification token
+        if payload.get("type") != "email_verification":
+            return None
+        return payload
+    except ExpiredSignatureError:
+        return None
+    except PyJWTError:
+        return None
+

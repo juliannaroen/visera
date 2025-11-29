@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { authApi } from "@/lib/api/auth";
@@ -12,9 +12,15 @@ export default function VerifyEmailPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
+  const hasVerified = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple verification attempts
+    if (hasVerified.current) {
+      return;
+    }
+
     const token = searchParams.get("token");
 
     if (!token) {
@@ -23,25 +29,32 @@ export default function VerifyEmailPage() {
       return;
     }
 
+    hasVerified.current = true;
+
     const verifyEmail = async () => {
       try {
         await authApi.verifyEmail(token);
         setSuccess(true);
         // Refresh user data to get updated verification status
         await refreshUser();
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to verify email");
+        hasVerified.current = false; // Allow retry on error
       } finally {
         setIsLoading(false);
       }
     };
 
     verifyEmail();
-  }, [searchParams, router, refreshUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Redirect to dashboard once user state confirms email is verified
+  useEffect(() => {
+    if (success && user?.is_email_verified) {
+      router.push("/dashboard");
+    }
+  }, [success, user?.is_email_verified, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">

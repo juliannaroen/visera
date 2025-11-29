@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/hooks";
 
@@ -9,14 +9,41 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
+    // Don't do anything while loading
+    if (isLoading) {
+      return;
     }
-  }, [isAuthenticated, isLoading, router]);
+
+    if (!isAuthenticated) {
+      if (!hasRedirected.current) {
+        hasRedirected.current = true;
+        router.push("/login");
+      }
+      return;
+    }
+
+    // Wait for user to be loaded
+    if (!user) {
+      return;
+    }
+
+    // Reset redirect flag if user becomes verified
+    if (user.is_email_verified) {
+      hasRedirected.current = false;
+      return;
+    }
+
+    // If user is not verified, redirect (only once)
+    if (!user.is_email_verified && !hasRedirected.current) {
+      hasRedirected.current = true;
+      router.push("/resend-verification");
+    }
+  }, [isAuthenticated, isLoading, user, router]);
 
   if (isLoading) {
     return (
@@ -31,6 +58,19 @@ export default function DashboardLayout({
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // If user is not verified, show loading while redirect happens
+  // The useEffect will handle the actual redirect
+  if (user && !user.is_email_verified) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-rose-500 border-t-transparent mx-auto"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

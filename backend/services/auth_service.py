@@ -4,14 +4,14 @@ from fastapi import HTTPException, status
 from models.user import User
 from schemas.auth import LoginRequest, LoginResponse
 from schemas.user import UserResponse
-from core.security import verify_password, create_access_token
-from services.user_service import get_user_by_email
+from core.security import verify_password, create_access_token, create_email_verification_token
+from core.email import send_verification_email as send_verification_email_core
 
 
 def authenticate_user(db: Session, login_data: LoginRequest) -> LoginResponse:
     """Authenticate a user and return JWT token"""
     # Find user by email
-    user = get_user_by_email(db, login_data.email)
+    user = db.query(User).filter(User.email == login_data.email).first()
 
     if not user:
         raise HTTPException(
@@ -35,7 +35,33 @@ def authenticate_user(db: Session, login_data: LoginRequest) -> LoginResponse:
         user=UserResponse(
             id=user.id,
             email=user.email,
-            created_at=user.created_at.isoformat() if user.created_at else ""
+            created_at=user.created_at.isoformat() if user.created_at else "",
+            is_email_verified=user.is_email_verified
         )
     )
+
+
+def send_verification_email(db: Session, user_id: int) -> bool:
+    """
+    Send email verification email to user.
+    Can be used for initial send or resend.
+    Part of the authentication/identity verification flow.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        return False
+
+    # Don't send if already verified
+    if user.is_email_verified:
+        return False
+
+    # Generate verification token and send email
+    try:
+        verification_token = create_email_verification_token(user.id, user.email)
+        send_verification_email_core(user.email, verification_token)
+        return True
+    except Exception as e:
+        print(f"Failed to send verification email: {e}")
+        return False
 

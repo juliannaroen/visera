@@ -11,6 +11,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     created_at: str
+    is_email_verified: bool = False
 
     class Config:
         from_attributes = True
