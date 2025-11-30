@@ -83,7 +83,7 @@ jobs:
           JWT_SECRET_KEY: test-secret-key-for-testing-only
           JWT_EXPIRE_MINUTES: 1440
           # Database Configuration (tests use in-memory SQLite, but config requires this)
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: "sqlite:///:memory:"
           # Email Configuration (dummy values for tests)
           SMTP_HOST: smtp.example.com
           SMTP_PORT: 587
@@ -109,7 +109,7 @@ jobs:
           JWT_SECRET_KEY: test-secret-key-for-testing-only
           JWT_EXPIRE_MINUTES: 1440
           # Database Configuration (tests use in-memory SQLite, but config requires this)
-          DATABASE_URL: sqlite:///:memory:
+          DATABASE_URL: "sqlite:///:memory:"
           # Email Configuration (dummy values for tests)
           SMTP_HOST: smtp.example.com
           SMTP_PORT: 587
