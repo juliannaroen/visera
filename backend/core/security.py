@@ -54,40 +54,6 @@ def verify_token(token: str) -> Optional[dict]:
         return None
 
 
-def create_email_verification_token(user_id: int, user_email: str) -> str:
-    """Create a JWT token for email verification (expires in 24 hours)"""
-    if not settings.jwt_secret_key:
-        raise ValueError("JWT_SECRET_KEY environment variable must be set")
-
-    expire = datetime.utcnow() + timedelta(hours=24)
-    to_encode = {
-        "sub": str(user_id),
-        "email": user_email,
-        "type": "email_verification",
-        "exp": expire,
-        "iat": datetime.utcnow()
-    }
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
-
-
-def verify_email_verification_token(token: str) -> Optional[dict]:
-    """Verify and decode an email verification token (deprecated - use OTP instead)"""
-    if not settings.jwt_secret_key:
-        return None
-
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        # Verify this is an email verification token
-        if payload.get("type") != "email_verification":
-            return None
-        return payload
-    except ExpiredSignatureError:
-        return None
-    except PyJWTError:
-        return None
-
-
 def generate_otp_code(length: int = 6) -> str:
     """
     Generate a random alphanumeric OTP code.

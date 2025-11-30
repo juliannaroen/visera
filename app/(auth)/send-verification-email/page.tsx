@@ -36,10 +36,12 @@ export default function SendVerificationEmailPage() {
 
     try {
       // Send verification email (with email parameter if not authenticated)
+      const emailToUse = isAuthenticated && user ? user.email : email;
       await authApi.sendVerificationEmail(
         isAuthenticated && user ? undefined : email
       );
-      setSuccess(true);
+      // Redirect to verify-otp page immediately after sending
+      router.push(`/verify-otp?email=${encodeURIComponent(emailToUse)}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to send verification email"

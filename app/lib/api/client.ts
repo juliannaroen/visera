@@ -40,8 +40,9 @@ function handleAuthError(status: number, errorDetail: string): void {
       errorDetail.toLowerCase().includes("verification required");
 
     if (isEmailVerificationIssue && typeof window !== "undefined") {
-      // Redirect to email verification page
-      window.location.href = "/send-verification-email";
+      // Redirect to OTP verification page
+      // If we have user email from response, include it in the URL
+      window.location.href = "/verify-otp";
       return;
     }
 
