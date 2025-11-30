@@ -2,7 +2,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from core.config import settings
 
 # Lazy initialization - only create engine when needed
 # This prevents import-time errors if DATABASE_URL is not set
@@ -13,6 +12,8 @@ def get_engine():
     """Get or create the database engine"""
     global engine
     if engine is None:
+        # Import settings lazily to avoid requiring all env vars at import time
+        from core.config import settings
         if not settings.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
         engine = create_engine(

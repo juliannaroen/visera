@@ -33,31 +33,33 @@ def _get_required_int_env(key: str) -> int:
 class Settings:
     """Application settings loaded from environment variables"""
 
-    # Auth Configuration
-    auth_cookie_name: str = _get_required_env("AUTH_COOKIE_NAME")
-    auth_cookie_max_age: int = _get_required_int_env("AUTH_COOKIE_MAX_AGE")
-    jwt_secret_key: str = _get_required_env("JWT_SECRET_KEY")
-    jwt_algorithm: str = "HS256"  # Not configurable, always HS256
-    jwt_expire_minutes: int = _get_required_int_env("JWT_EXPIRE_MINUTES")
+    def __init__(self):
+        """Initialize settings - loads env vars lazily to avoid import-time errors"""
+        # Auth Configuration
+        self.auth_cookie_name: str = _get_required_env("AUTH_COOKIE_NAME")
+        self.auth_cookie_max_age: int = _get_required_int_env("AUTH_COOKIE_MAX_AGE")
+        self.jwt_secret_key: str = _get_required_env("JWT_SECRET_KEY")
+        self.jwt_algorithm: str = "HS256"  # Not configurable, always HS256
+        self.jwt_expire_minutes: int = _get_required_int_env("JWT_EXPIRE_MINUTES")
 
-    # Database Configuration
-    database_url: str = _get_required_env("DATABASE_URL")
+        # Database Configuration
+        self.database_url: str = _get_required_env("DATABASE_URL")
 
-    # Email Configuration
-    smtp_host: str = _get_required_env("SMTP_HOST")
-    smtp_port: int = _get_required_int_env("SMTP_PORT")
-    smtp_user: str = _get_required_env("SMTP_USER")
-    smtp_password: str = _get_required_env("SMTP_PASSWORD")
-    smtp_from_email: str = _get_required_env("SMTP_FROM_EMAIL")
-    frontend_url: str = _get_required_env("FRONTEND_URL")
+        # Email Configuration
+        self.smtp_host: str = _get_required_env("SMTP_HOST")
+        self.smtp_port: int = _get_required_int_env("SMTP_PORT")
+        self.smtp_user: str = _get_required_env("SMTP_USER")
+        self.smtp_password: str = _get_required_env("SMTP_PASSWORD")
+        self.smtp_from_email: str = _get_required_env("SMTP_FROM_EMAIL")
+        self.frontend_url: str = _get_required_env("FRONTEND_URL")
 
-    # CORS Configuration
-    allowed_origins: str = _get_required_env("ALLOWED_ORIGINS")
+        # CORS Configuration
+        self.allowed_origins: str = _get_required_env("ALLOWED_ORIGINS")
 
-    # App Configuration
-    environment: str = _get_required_env("ENVIRONMENT")
-    # PORT is set automatically by Cloud Run, but we provide a default for local development
-    port: int = int(os.getenv("PORT", "8080"))
+        # App Configuration
+        self.environment: str = _get_required_env("ENVIRONMENT")
+        # PORT is set automatically by Cloud Run, but we provide a default for local development
+        self.port: int = int(os.getenv("PORT", "8080"))
 
     @property
     def is_production(self) -> bool:
