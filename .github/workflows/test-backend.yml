@@ -77,21 +77,51 @@ jobs:
         if: steps.check-backend.outputs.changed == 'true' && success()
         working-directory: ./backend
         env:
-          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          # Auth Configuration
+          AUTH_COOKIE_NAME: test.sid
+          AUTH_COOKIE_MAX_AGE: 2592000
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-secret-key-for-testing-only' }}
+          JWT_EXPIRE_MINUTES: 1440
+          # Database Configuration (tests use in-memory SQLite, but config requires this)
+          DATABASE_URL: sqlite:///:memory:
+          # Email Configuration (dummy values for tests)
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: 587
+          SMTP_USER: testuser
+          SMTP_PASSWORD: testpass
+          SMTP_FROM_EMAIL: test@example.com
+          FRONTEND_URL: http://localhost:3000
+          # CORS Configuration
+          ALLOWED_ORIGINS: http://localhost:3000
+          # App Configuration
+          ENVIRONMENT: test
         run: |
           set -e
-          # Set default test secret if not provided
-          export JWT_SECRET_KEY="${JWT_SECRET_KEY:-test-secret-key-for-testing-only}"
           pdm run test
 
       - name: Generate coverage report (optional)
         if: steps.check-backend.outputs.changed == 'true' && success()
         working-directory: ./backend
         env:
-          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          # Auth Configuration
+          AUTH_COOKIE_NAME: sid
+          AUTH_COOKIE_MAX_AGE: 2592000
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'test-secret-key-for-testing-only' }}
+          JWT_EXPIRE_MINUTES: 1440
+          # Database Configuration (tests use in-memory SQLite, but config requires this)
+          DATABASE_URL: sqlite:///:memory:
+          # Email Configuration (dummy values for tests)
+          SMTP_HOST: smtp.example.com
+          SMTP_PORT: 587
+          SMTP_USER: testuser
+          SMTP_PASSWORD: testpass
+          SMTP_FROM_EMAIL: test@example.com
+          FRONTEND_URL: http://localhost:3000
+          # CORS Configuration
+          ALLOWED_ORIGINS: http://localhost:3000
+          # App Configuration
+          ENVIRONMENT: test
         run: |
           set -e
-          # Set default test secret if not provided
-          export JWT_SECRET_KEY="${JWT_SECRET_KEY:-test-secret-key-for-testing-only}"
           pdm run test-cov
         continue-on-error: true
