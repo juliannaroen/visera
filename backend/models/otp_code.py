@@ -1,13 +1,13 @@
 """OTP Code model for storing one-time passwords"""
-import enum
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class OtpType(str, enum.Enum):
-    """OTP code types"""
+# OTP type constants (for validation, not database enum)
+class OtpType:
+    """OTP code type constants"""
     EMAIL_VERIFICATION = "email_verification"
 
 
@@ -16,8 +16,7 @@ class OtpCode(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    # Use native_enum=False to support SQLite (uses String) and PostgreSQL (uses enum)
-    type = Column(Enum(OtpType, native_enum=False), nullable=False, index=True)
+    type = Column(String, nullable=False, index=True)  # OTP type (e.g., "email_verification")
     hashed_code = Column(String, nullable=False)  # Hashed OTP code
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

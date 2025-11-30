@@ -1,6 +1,6 @@
 """Authentication service - business logic for authentication"""
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, text
+from sqlalchemy import desc
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta, timezone
 from models.user import User
@@ -76,27 +76,20 @@ def send_verification_email(db: Session, user_id: int) -> bool:
 
     # Invalidate any existing OTPs for this user and type by deleting them
     # (We only keep the latest one)
-    # Use text() to bypass SQLAlchemy's enum conversion which uses enum name instead of value
-    db.execute(
-        text("DELETE FROM otp_codes WHERE user_id = :user_id AND type = :otp_type"),
-        {"user_id": user_id, "otp_type": "email_verification"}
-    )
+    db.query(OtpCode).filter(
+        OtpCode.user_id == user_id,
+        OtpCode.type == OtpType.EMAIL_VERIFICATION
+    ).delete()
     db.commit()
 
     # Create new OTP code record
-    # Use raw SQL to insert with enum value directly to avoid SQLAlchemy enum conversion
-    db.execute(
-        text("""
-            INSERT INTO otp_codes (user_id, type, hashed_code, expires_at)
-            VALUES (:user_id, :otp_type, :hashed_code, :expires_at)
-        """),
-        {
-            "user_id": user_id,
-            "otp_type": "email_verification",
-            "hashed_code": hashed_code,
-            "expires_at": expires_at
-        }
+    otp_record = OtpCode(
+        user_id=user_id,
+        type=OtpType.EMAIL_VERIFICATION,
+        hashed_code=hashed_code,
+        expires_at=expires_at
     )
+    db.add(otp_record)
     db.commit()
 
     # Send OTP code via email
@@ -151,45 +144,35 @@ def verify_otp_code(db: Session, email: str, code: str) -> User:
         )
 
     # Get the latest OTP code for this user and type
-    # Use text() with explicit column casting to avoid SQLAlchemy enum conversion
-    result = db.execute(
-        text("""
-            SELECT
-                id,
-                user_id,
-                type::text as type,
-                hashed_code,
-                expires_at,
-                created_at
-            FROM otp_codes
-            WHERE user_id = :user_id AND type = :otp_type
-            ORDER BY created_at DESC
-            LIMIT 1
-        """),
-        {"user_id": user.id, "otp_type": "email_verification"}
-    )
-    row = result.first()
-    if not row:
+    otp_record = db.query(OtpCode).filter(
+        OtpCode.user_id == user.id,
+        OtpCode.type == OtpType.EMAIL_VERIFICATION
+    ).order_by(desc(OtpCode.created_at)).first()
+
+    if not otp_record:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No verification code found. Please request a new code."
         )
 
-    # Check if code has expired
-    # Use database's NOW() for accurate comparison to avoid timezone issues
-    result_check = db.execute(
-        text("SELECT expires_at > NOW() as is_valid FROM otp_codes WHERE id = :otp_id"),
-        {"otp_id": row.id}
-    )
-    is_valid = result_check.scalar()
-    if not is_valid:
+    # Check if code has expired (use timezone-aware datetime)
+    now_utc = datetime.now(timezone.utc)
+    expires_at_utc = otp_record.expires_at
+    if expires_at_utc.tzinfo is None:
+        # If database returned naive datetime, assume it's UTC
+        expires_at_utc = expires_at_utc.replace(tzinfo=timezone.utc)
+    elif expires_at_utc.tzinfo != timezone.utc:
+        # Convert to UTC if in different timezone
+        expires_at_utc = expires_at_utc.astimezone(timezone.utc)
+
+    if now_utc > expires_at_utc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Verification code has expired. Please request a new code."
         )
 
     # Verify the code hash
-    if not verify_otp_hash(code, row.hashed_code):
+    if not verify_otp_hash(code, otp_record.hashed_code):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid verification code."
@@ -198,11 +181,8 @@ def verify_otp_code(db: Session, email: str, code: str) -> User:
     # Code is valid - verify user's email
     verified_user = verify_user_email(db, user.id)
 
-    # Delete the used OTP code using raw SQL to avoid enum conversion
-    db.execute(
-        text("DELETE FROM otp_codes WHERE id = :otp_id"),
-        {"otp_id": row.id}
-    )
+    # Delete the used OTP code
+    db.delete(otp_record)
     db.commit()
 
     return verified_user
