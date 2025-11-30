@@ -1,7 +1,8 @@
 """Unit tests for core config"""
 import os
 import pytest
-from core.config import get_cors_config
+from unittest.mock import patch
+from core.config import get_cors_config, settings
 
 
 class TestGetCorsConfig:
@@ -9,9 +10,9 @@ class TestGetCorsConfig:
 
     def test_get_cors_config_single_origin(self):
         """Test CORS config with single origin"""
-        original_value = os.environ.get("ALLOWED_ORIGINS")
+        original_value = settings.allowed_origins
         try:
-            os.environ["ALLOWED_ORIGINS"] = "https://example.com"
+            settings.allowed_origins = "https://example.com"
             config = get_cors_config()
 
             assert "allow_origins" in config
@@ -22,16 +23,13 @@ class TestGetCorsConfig:
             assert "*" in config["allow_methods"]
             assert "*" in config["allow_headers"]
         finally:
-            if original_value:
-                os.environ["ALLOWED_ORIGINS"] = original_value
-            else:
-                os.environ.pop("ALLOWED_ORIGINS", None)
+            settings.allowed_origins = original_value
 
     def test_get_cors_config_multiple_origins(self):
         """Test CORS config with multiple comma-separated origins"""
-        original_value = os.environ.get("ALLOWED_ORIGINS")
+        original_value = settings.allowed_origins
         try:
-            os.environ["ALLOWED_ORIGINS"] = "https://example.com,https://app.example.com,http://localhost:3000"
+            settings.allowed_origins = "https://example.com,https://app.example.com,http://localhost:3000"
             config = get_cors_config()
 
             assert "allow_origins" in config
@@ -40,16 +38,13 @@ class TestGetCorsConfig:
             assert "http://localhost:3000" in config["allow_origins"]
             assert len(config["allow_origins"]) == 3
         finally:
-            if original_value:
-                os.environ["ALLOWED_ORIGINS"] = original_value
-            else:
-                os.environ.pop("ALLOWED_ORIGINS", None)
+            settings.allowed_origins = original_value
 
     def test_get_cors_config_with_whitespace(self):
         """Test CORS config handles whitespace in comma-separated values"""
-        original_value = os.environ.get("ALLOWED_ORIGINS")
+        original_value = settings.allowed_origins
         try:
-            os.environ["ALLOWED_ORIGINS"] = "https://example.com, https://app.example.com , http://localhost:3000"
+            settings.allowed_origins = "https://example.com, https://app.example.com , http://localhost:3000"
             config = get_cors_config()
 
             assert "allow_origins" in config
@@ -59,24 +54,18 @@ class TestGetCorsConfig:
             # Whitespace should be stripped
             assert " https://app.example.com " not in config["allow_origins"]
         finally:
-            if original_value:
-                os.environ["ALLOWED_ORIGINS"] = original_value
-            else:
-                os.environ.pop("ALLOWED_ORIGINS", None)
+            settings.allowed_origins = original_value
 
     def test_get_cors_config_removes_duplicates(self):
         """Test CORS config removes duplicate origins"""
-        original_value = os.environ.get("ALLOWED_ORIGINS")
+        original_value = settings.allowed_origins
         try:
-            os.environ["ALLOWED_ORIGINS"] = "https://example.com,https://example.com,https://app.example.com"
+            settings.allowed_origins = "https://example.com,https://example.com,https://app.example.com"
             config = get_cors_config()
 
             assert "allow_origins" in config
             assert config["allow_origins"].count("https://example.com") == 1
             assert len(config["allow_origins"]) == 2
         finally:
-            if original_value:
-                os.environ["ALLOWED_ORIGINS"] = original_value
-            else:
-                os.environ.pop("ALLOWED_ORIGINS", None)
+            settings.allowed_origins = original_value
 

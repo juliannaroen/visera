@@ -8,8 +8,9 @@ from core.security import (
     verify_password,
     create_access_token,
     verify_token,
-    create_email_verification_token,
-    verify_email_verification_token
+    generate_otp_code,
+    hash_otp_code,
+    verify_otp_code
 )
 
 
@@ -92,22 +93,22 @@ class TestCreateAccessToken:
         assert (exp - iat).total_seconds() == pytest.approx(3600, abs=60)
 
     def test_create_access_token_no_secret_key(self):
-        """Test creating access token without SECRET_KEY"""
-        # SECRET_KEY is set at module import time, so we need to mock it
+        """Test creating access token without JWT_SECRET_KEY"""
         from unittest.mock import patch
-        from core import security
+        from core import config
 
-        original_secret = security.SECRET_KEY
+        original_secret = config.settings.jwt_secret_key
         try:
-            with patch.object(security, 'SECRET_KEY', None):
-                data = {"sub": "123"}
+            # Temporarily set jwt_secret_key to None
+            config.settings.jwt_secret_key = None
+            data = {"sub": "123"}
 
-                with pytest.raises(ValueError) as exc_info:
-                    create_access_token(data)
+            with pytest.raises(ValueError) as exc_info:
+                create_access_token(data)
 
-                assert "JWT_SECRET_KEY" in str(exc_info.value)
+            assert "JWT_SECRET_KEY" in str(exc_info.value)
         finally:
-            security.SECRET_KEY = original_secret
+            config.settings.jwt_secret_key = original_secret
 
 
 class TestVerifyToken:
@@ -171,116 +172,86 @@ class TestVerifyToken:
                 os.environ["JWT_SECRET_KEY"] = original_value
 
 
-class TestCreateEmailVerificationToken:
-    """Test suite for create_email_verification_token function"""
+class TestGenerateOtpCode:
+    """Test suite for generate_otp_code function"""
 
-    def test_create_email_verification_token_success(self):
-        """Test creating email verification token successfully"""
-        # Set JWT_SECRET_KEY if not set
-        if not os.getenv("JWT_SECRET_KEY"):
-            os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+    def test_generate_otp_code_default_length(self):
+        """Test generating OTP code with default length"""
+        code = generate_otp_code()
+        assert len(code) == 6
+        assert code.isalnum()
+        assert code.isupper()
 
-        token = create_email_verification_token(123, "test@example.com")
+    def test_generate_otp_code_custom_length(self):
+        """Test generating OTP code with custom length"""
+        code = generate_otp_code(length=8)
+        assert len(code) == 8
+        assert code.isalnum()
+        assert code.isupper()
 
-        assert token is not None
-        assert isinstance(token, str)
-
-        # Verify token can be decoded
-        payload = jwt.decode(token, os.getenv("JWT_SECRET_KEY"), algorithms=["HS256"])
-        assert payload["sub"] == "123"
-        assert payload["email"] == "test@example.com"
-        assert payload["type"] == "email_verification"
-
-    def test_create_email_verification_token_no_secret_key(self):
-        """Test creating email verification token without SECRET_KEY"""
-        # SECRET_KEY is set at module import time, so we need to mock it
-        from unittest.mock import patch
-        from core import security
-
-        original_secret = security.SECRET_KEY
-        try:
-            with patch.object(security, 'SECRET_KEY', None):
-                with pytest.raises(ValueError) as exc_info:
-                    create_email_verification_token(123, "test@example.com")
-
-                assert "JWT_SECRET_KEY" in str(exc_info.value)
-        finally:
-            security.SECRET_KEY = original_secret
+    def test_generate_otp_code_excludes_similar_chars(self):
+        """Test that OTP code excludes similar-looking characters"""
+        # Generate multiple codes to ensure excluded chars don't appear
+        codes = [generate_otp_code() for _ in range(100)]
+        all_chars = ''.join(codes)
+        assert '0' not in all_chars
+        assert 'O' not in all_chars
+        assert 'I' not in all_chars
+        assert '1' not in all_chars
 
 
-class TestVerifyEmailVerificationToken:
-    """Test suite for verify_email_verification_token function"""
+class TestHashOtpCode:
+    """Test suite for hash_otp_code function"""
 
-    def test_verify_email_verification_token_success(self):
-        """Test verifying valid email verification token"""
-        # Set JWT_SECRET_KEY if not set
-        if not os.getenv("JWT_SECRET_KEY"):
-            os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+    def test_hash_otp_code(self):
+        """Test OTP code hashing"""
+        code = "ABC123"
+        hashed = hash_otp_code(code)
 
-        token = create_email_verification_token(123, "test@example.com")
+        assert hashed is not None
+        assert isinstance(hashed, str)
+        assert hashed != code  # Should be different from original
+        assert hashed.startswith("$2b$")  # bcrypt hash format
 
-        payload = verify_email_verification_token(token)
+    def test_hash_otp_code_different_codes_different_hashes(self):
+        """Test that different codes produce different hashes"""
+        code1 = "ABC123"
+        code2 = "XYZ789"
 
-        assert payload is not None
-        assert payload["sub"] == "123"
-        assert payload["email"] == "test@example.com"
-        assert payload["type"] == "email_verification"
+        hashed1 = hash_otp_code(code1)
+        hashed2 = hash_otp_code(code2)
 
-    def test_verify_email_verification_token_wrong_type(self):
-        """Test verifying token with wrong type"""
-        # Set JWT_SECRET_KEY if not set
-        if not os.getenv("JWT_SECRET_KEY"):
-            os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+        assert hashed1 != hashed2
 
-        # Create an access token (wrong type)
-        data = {"sub": "123", "email": "test@example.com"}
-        token = create_access_token(data)
 
-        payload = verify_email_verification_token(token)
+class TestVerifyOtpCode:
+    """Test suite for verify_otp_code function"""
 
-        assert payload is None
+    def test_verify_otp_code_success(self):
+        """Test verifying valid OTP code"""
+        code = "ABC123"
+        hashed = hash_otp_code(code)
 
-    def test_verify_email_verification_token_expired(self):
-        """Test verifying expired email verification token"""
-        # Set JWT_SECRET_KEY if not set
-        if not os.getenv("JWT_SECRET_KEY"):
-            os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+        result = verify_otp_code(code, hashed)
 
-        # Create an expired token
-        expire = datetime.utcnow() - timedelta(hours=25)
-        payload = {
-            "sub": "123",
-            "email": "test@example.com",
-            "type": "email_verification",
-            "exp": expire,
-            "iat": datetime.utcnow() - timedelta(hours=26)
-        }
-        expired_token = jwt.encode(payload, os.getenv("JWT_SECRET_KEY"), algorithm="HS256")
+        assert result is True
 
-        result = verify_email_verification_token(expired_token)
+    def test_verify_otp_code_wrong_code(self):
+        """Test verifying wrong OTP code"""
+        code = "ABC123"
+        wrong_code = "XYZ789"
+        hashed = hash_otp_code(code)
 
-        assert result is None
+        result = verify_otp_code(wrong_code, hashed)
 
-    def test_verify_email_verification_token_invalid(self):
-        """Test verifying invalid email verification token"""
-        # Set JWT_SECRET_KEY if not set
-        if not os.getenv("JWT_SECRET_KEY"):
-            os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+        assert result is False
 
-        result = verify_email_verification_token("invalid-token")
+    def test_verify_otp_code_invalid_hash(self):
+        """Test verifying with invalid hash"""
+        code = "ABC123"
+        invalid_hash = "invalid-hash"
 
-        assert result is None
+        result = verify_otp_code(code, invalid_hash)
 
-    def test_verify_email_verification_token_no_secret_key(self):
-        """Test verifying email verification token without SECRET_KEY"""
-        original_value = os.environ.get("JWT_SECRET_KEY")
-        try:
-            os.environ.pop("JWT_SECRET_KEY", None)
-
-            result = verify_email_verification_token("some-token")
-
-            assert result is None
-        finally:
-            if original_value:
-                os.environ["JWT_SECRET_KEY"] = original_value
+        assert result is False
 

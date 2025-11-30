@@ -16,7 +16,8 @@ class OtpCode(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    type = Column(Enum(OtpType, native_enum=True, create_constraint=True), nullable=False, index=True)
+    # Use native_enum=False to support SQLite (uses String) and PostgreSQL (uses enum)
+    type = Column(Enum(OtpType, native_enum=False), nullable=False, index=True)
     hashed_code = Column(String, nullable=False)  # Hashed OTP code
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

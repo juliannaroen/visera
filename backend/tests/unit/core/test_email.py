@@ -8,54 +8,28 @@ from core.email import (
     send_email,
     send_verification_email
 )
+from core.config import settings
 
 
 class TestGetSmtpConfig:
     """Test suite for get_smtp_config function"""
 
-    def test_get_smtp_config_default(self):
-        """Test SMTP config with default values"""
-        original_values = {
-            "SMTP_HOST": os.environ.get("SMTP_HOST"),
-            "SMTP_PORT": os.environ.get("SMTP_PORT"),
-            "SMTP_USER": os.environ.get("SMTP_USER"),
-            "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD"),
-            "SMTP_FROM_EMAIL": os.environ.get("SMTP_FROM_EMAIL"),
-        }
-
-        try:
-            # Clear environment variables
-            for key in original_values:
-                os.environ.pop(key, None)
-
-            config = get_smtp_config()
-
-            assert config["host"] == "smtp.sendgrid.net"
-            assert config["port"] == 587
-        finally:
-            # Restore original values
-            for key, value in original_values.items():
-                if value:
-                    os.environ[key] = value
-                else:
-                    os.environ.pop(key, None)
-
     def test_get_smtp_config_custom(self):
         """Test SMTP config with custom values"""
         original_values = {
-            "SMTP_HOST": os.environ.get("SMTP_HOST"),
-            "SMTP_PORT": os.environ.get("SMTP_PORT"),
-            "SMTP_USER": os.environ.get("SMTP_USER"),
-            "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD"),
-            "SMTP_FROM_EMAIL": os.environ.get("SMTP_FROM_EMAIL"),
+            "smtp_host": settings.smtp_host,
+            "smtp_port": settings.smtp_port,
+            "smtp_user": settings.smtp_user,
+            "smtp_password": settings.smtp_password,
+            "smtp_from_email": settings.smtp_from_email,
         }
 
         try:
-            os.environ["SMTP_HOST"] = "smtp.example.com"
-            os.environ["SMTP_PORT"] = "465"
-            os.environ["SMTP_USER"] = "testuser"
-            os.environ["SMTP_PASSWORD"] = "testpass"
-            os.environ["SMTP_FROM_EMAIL"] = "from@example.com"
+            settings.smtp_host = "smtp.example.com"
+            settings.smtp_port = 465
+            settings.smtp_user = "testuser"
+            settings.smtp_password = "testpass"
+            settings.smtp_from_email = "from@example.com"
 
             config = get_smtp_config()
 
@@ -66,50 +40,28 @@ class TestGetSmtpConfig:
             assert config["from_email"] == "from@example.com"
         finally:
             # Restore original values
-            for key, value in original_values.items():
-                if value:
-                    os.environ[key] = value
-                else:
-                    os.environ.pop(key, None)
-
-    def test_get_smtp_config_from_email_fallback(self):
-        """Test SMTP config where from_email falls back to SMTP_USER"""
-        original_values = {
-            "SMTP_USER": os.environ.get("SMTP_USER"),
-            "SMTP_FROM_EMAIL": os.environ.get("SMTP_FROM_EMAIL"),
-        }
-
-        try:
-            os.environ["SMTP_USER"] = "testuser@example.com"
-            os.environ.pop("SMTP_FROM_EMAIL", None)
-
-            config = get_smtp_config()
-
-            assert config["from_email"] == "testuser@example.com"
-        finally:
-            # Restore original values
-            for key, value in original_values.items():
-                if value:
-                    os.environ[key] = value
-                else:
-                    os.environ.pop(key, None)
+            settings.smtp_host = original_values["smtp_host"]
+            settings.smtp_port = original_values["smtp_port"]
+            settings.smtp_user = original_values["smtp_user"]
+            settings.smtp_password = original_values["smtp_password"]
+            settings.smtp_from_email = original_values["smtp_from_email"]
 
 
 class TestGetVerificationEmailTemplate:
     """Test suite for get_verification_email_template function"""
 
     def test_get_verification_email_template(self):
-        """Test email template generation"""
+        """Test email template generation with OTP code"""
         user_email = "test@example.com"
-        verification_link = "https://example.com/verify?token=abc123"
+        otp_code = "ABC123"
 
-        template = get_verification_email_template(user_email, verification_link)
+        template = get_verification_email_template(user_email, otp_code)
 
-        # Note: user_email is not directly in the template, but verification_link is
-        assert verification_link in template
+        # Check that OTP code is in the template
+        assert otp_code in template
         assert "Verify Your Email" in template
-        assert "Verify Email Address" in template
-        assert "24 hours" in template
+        assert "15 minutes" in template
+        assert "Enter this code" in template
 
 
 class TestSendEmail:
@@ -274,35 +226,16 @@ class TestSendVerificationEmail:
     """Test suite for send_verification_email function"""
 
     def test_send_verification_email_success(self):
-        """Test successfully sending verification email"""
-        original_values = {
-            "FRONTEND_URL": os.environ.get("FRONTEND_URL"),
-        }
+        """Test successfully sending verification email with OTP code"""
+        with patch('core.email.send_email', return_value=True):
+            result = send_verification_email("test@example.com", "ABC123")
 
-        try:
-            os.environ["FRONTEND_URL"] = "https://example.com"
+            assert result is True
 
-            with patch('core.email.send_email', return_value=True):
-                result = send_verification_email("test@example.com", "token123")
+    def test_send_verification_email_failure(self):
+        """Test sending verification email when email sending fails"""
+        with patch('core.email.send_email', return_value=False):
+            result = send_verification_email("test@example.com", "ABC123")
 
-                assert result is True
-        finally:
-            if original_values["FRONTEND_URL"]:
-                os.environ["FRONTEND_URL"] = original_values["FRONTEND_URL"]
-            else:
-                os.environ.pop("FRONTEND_URL", None)
-
-    def test_send_verification_email_default_frontend_url(self):
-        """Test sending verification email with default FRONTEND_URL"""
-        original_value = os.environ.get("FRONTEND_URL")
-        try:
-            os.environ.pop("FRONTEND_URL", None)
-
-            with patch('core.email.send_email', return_value=True):
-                result = send_verification_email("test@example.com", "token123")
-
-                assert result is True
-        finally:
-            if original_value:
-                os.environ["FRONTEND_URL"] = original_value
+            assert result is False
 
