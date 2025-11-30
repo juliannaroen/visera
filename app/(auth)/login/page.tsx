@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const { login, isAuthenticated, user, isLoading, logout } = useAuth();
+  const { login, isAuthenticated, user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,11 +31,11 @@ export default function LoginPage() {
       if (user && user.is_email_verified) {
         router.push("/dashboard");
       } else if (user && !user.is_email_verified) {
-        // User is authenticated but not verified, log them out so they can log in again
-        logout();
+        // User is authenticated but not verified, redirect to OTP verification
+        router.push(`/verify-otp?email=${encodeURIComponent(user.email)}`);
       }
     }
-  }, [isAuthenticated, user, isLoading, router, logout]);
+  }, [isAuthenticated, user, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,10 +53,11 @@ export default function LoginPage() {
 
       // Check if email is verified
       if (!response.user.is_email_verified) {
-        // Log out the user since they're not verified
-        logout();
-        // Redirect to resend verification page
-        router.push("/send-verification-email");
+        // Backend already sent new OTP email
+        // Keep session (cookie was set by backend) and redirect to OTP verification
+        router.push(
+          `/verify-otp?email=${encodeURIComponent(credentials.email)}`
+        );
       } else {
         // Email is verified, proceed to dashboard
         router.push("/dashboard");

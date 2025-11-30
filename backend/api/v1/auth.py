@@ -3,13 +3,16 @@ from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.config import settings
-from schemas.auth import LoginRequest, LoginResponse, SendVerificationEmailRequest, VerifyEmailRequest
+from schemas.auth import LoginRequest, LoginResponse, SendVerificationEmailRequest, VerifyOtpRequest
 from schemas.user import UserResponse
-from services.auth_service import authenticate_user
-from services.user_service import verify_user_email
-from services.auth_service import send_verification_email, send_verification_email_by_email
+from services.auth_service import (
+    authenticate_user,
+    send_verification_email,
+    send_verification_email_by_email,
+    verify_otp_code
+)
+from core.security import create_access_token
 from api.deps import get_current_user, get_verified_user, get_optional_current_user
-from core.security import verify_email_verification_token
 from models.user import User
 
 router = APIRouter()
@@ -24,15 +27,22 @@ async def login(
     """
     Authenticate a user with email and password.
 
-    Sets an httpOnly cookie with the JWT token and returns user information.
-    The cookie is automatically sent with subsequent requests.
+    If user is unverified, sends a new OTP email and returns user info without creating session.
+    If user is verified, sets an httpOnly cookie with the JWT token and returns user information.
 
     - **email**: User's email address
     - **password**: User's password
     """
     login_response = authenticate_user(db, login_data)
 
-    # Set httpOnly cookie with token
+    # If user is not verified, send OTP email and return without creating session
+    if not login_response.user.is_email_verified:
+        # Send new OTP email
+        send_verification_email(db, login_response.user.id)
+        # Return response without setting cookie (user needs to verify OTP first)
+        return login_response
+
+    # User is verified - set httpOnly cookie with token
     # httpOnly prevents JavaScript access (XSS protection)
     # secure=True in production (HTTPS only)
     # samesite="lax" provides CSRF protection
@@ -63,58 +73,45 @@ async def get_current_user_info(current_user: User = Depends(get_verified_user))
     )
 
 
-@router.post("/verify-email", response_model=UserResponse, status_code=status.HTTP_200_OK)
-async def verify_email(
-    verify_data: VerifyEmailRequest,
+@router.post("/verify-otp", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def verify_otp(
+    verify_data: VerifyOtpRequest,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
-    Verify a user's email address using a verification token.
+    Verify a user's email address using an OTP code.
+    After successful verification, creates a session (sets cookie) and returns user info.
 
-    - **token**: Email verification token received via email
+    - **email**: User's email address
+    - **code**: 6-character OTP code received via email
     """
-    # Verify the token
-    payload = verify_email_verification_token(verify_data.token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token"
+    # Verify OTP code and mark email as verified
+    verified_user = verify_otp_code(db, verify_data.email, verify_data.code)
+
+    # Create access token and session
+    access_token = create_access_token(data={"sub": str(verified_user.id), "email": verified_user.email})
+
+    # Set httpOnly cookie with token
+    response.set_cookie(
+        key=settings.auth_cookie_name,
+        value=access_token,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="lax",
+        max_age=settings.auth_cookie_max_age,
+        path="/"
+    )
+
+    return LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse(
+            id=verified_user.id,
+            email=verified_user.email,
+            created_at=verified_user.created_at.isoformat() if verified_user.created_at else "",
+            is_email_verified=verified_user.is_email_verified
         )
-
-    user_id = int(payload.get("sub"))
-    user_email = payload.get("email")
-
-    # Verify the user exists and email matches
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    if user.email != user_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Token email does not match user email"
-        )
-
-    # Check if already verified
-    if user.is_email_verified:
-        return UserResponse(
-            id=user.id,
-            email=user.email,
-            created_at=user.created_at.isoformat() if user.created_at else "",
-            is_email_verified=user.is_email_verified
-        )
-
-    # Mark email as verified
-    verified_user = verify_user_email(db, user_id)
-
-    return UserResponse(
-        id=verified_user.id,
-        email=verified_user.email,
-        created_at=verified_user.created_at.isoformat() if verified_user.created_at else "",
-        is_email_verified=verified_user.is_email_verified
     )
 
 

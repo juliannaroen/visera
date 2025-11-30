@@ -26,10 +26,10 @@ export const authApi = {
     );
   },
 
-  verifyEmail: async (token: string): Promise<User> => {
-    return apiRequest<User>("/api/v1/auth/verify-email", {
+  verifyOtp: async (email: string, code: string): Promise<LoginResponse> => {
+    return apiRequest<LoginResponse>("/api/v1/auth/verify-otp", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ email, code }),
     });
   },
 

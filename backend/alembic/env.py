@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from core.database import Base
 from models.user import User  # Import all models here
+from models.otp_code import OtpCode  # Import all models here
 from dotenv import load_dotenv
 
 load_dotenv()

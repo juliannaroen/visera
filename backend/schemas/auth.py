@@ -14,8 +14,9 @@ class LoginResponse(BaseModel):
     user: UserResponse
 
 
-class VerifyEmailRequest(BaseModel):
-    token: str = Field(..., description="Email verification token")
+class VerifyOtpRequest(BaseModel):
+    email: EmailStr = Field(..., description="User's email address")
+    code: str = Field(..., description="6-character OTP verification code", min_length=6, max_length=6)
 
 
 class SendVerificationEmailRequest(BaseModel):

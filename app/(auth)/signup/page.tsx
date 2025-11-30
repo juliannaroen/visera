@@ -12,7 +12,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
-  const { logout } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,17 +23,15 @@ export default function SignupPage() {
     const password = formData.get("password") as string;
 
     try {
-      // Create the user account (this will automatically send verification email)
+      // Create the user account (this will automatically send OTP email)
       await apiRequest<User>("/api/v1/users", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      // Log out the user since they're not verified
-      logout();
-
-      // Redirect to resend verification page
-      router.push("/send-verification-email");
+      // Redirect to OTP verification page
+      // No session is created yet - user must verify OTP first
+      router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setIsLoading(false);

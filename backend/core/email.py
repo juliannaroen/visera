@@ -18,8 +18,8 @@ def get_smtp_config():
     return settings.get_smtp_config()
 
 
-def get_verification_email_template(user_email: str, verification_link: str) -> str:
-    """Generate email verification email template using f-strings"""
+def get_verification_email_template(user_email: str, otp_code: str) -> str:
+    """Generate email verification email template with OTP code"""
     return f"""
     <!DOCTYPE html>
     <html>
@@ -33,19 +33,19 @@ def get_verification_email_template(user_email: str, verification_link: str) -> 
         </div>
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
           <p>Hi there,</p>
-          <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
+          <p>Thank you for signing up! Please verify your email address using the code below:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="{verification_link}"
-               style="background: #ec4899; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-              Verify Email Address
-            </a>
+            <div style="background: #fff; border: 2px solid #ec4899; border-radius: 8px; padding: 20px; display: inline-block;">
+              <p style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #ec4899; margin: 0; font-family: 'Courier New', monospace;">
+                {otp_code}
+              </p>
+            </div>
           </div>
-          <p style="font-size: 14px; color: #666;">Or copy and paste this link into your browser:</p>
-          <p style="font-size: 12px; color: #999; word-break: break-all; background: #fff; padding: 10px; border-radius: 4px;">
-            {verification_link}
-          </p>
           <p style="font-size: 14px; color: #666; margin-top: 30px;">
-            This link will expire in 24 hours. If you didn't create an account, you can safely ignore this email.
+            Enter this code on the verification page to complete your email verification.
+          </p>
+          <p style="font-size: 14px; color: #666;">
+            This code will expire in 15 minutes. If you didn't create an account, you can safely ignore this email.
           </p>
         </div>
       </body>
@@ -111,20 +111,18 @@ def send_email(
         return False
 
 
-def send_verification_email(user_email: str, verification_token: str) -> bool:
+def send_verification_email(user_email: str, otp_code: str) -> bool:
     """
-    Send email verification email
+    Send email verification email with OTP code
 
     Args:
         user_email: User's email address
-        verification_token: JWT token for email verification
+        otp_code: 6-character OTP code for email verification
 
     Returns:
         True if email sent successfully, False otherwise
     """
-    verification_link = f"{settings.frontend_url}/verify-email?token={verification_token}"
-
-    html_body = get_verification_email_template(user_email, verification_link)
+    html_body = get_verification_email_template(user_email, otp_code)
     subject = "Verify your email address"
 
     return send_email(user_email, subject, html_body)
