@@ -1,77 +1,19 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/hooks";
-
+/**
+ * Dashboard Layout
+ *
+ * Route protection is handled entirely by the backend.
+ * When pages load and make API calls, the backend validates authentication.
+ * If unauthenticated, backend returns 401/403, and API client handles redirects.
+ * This ensures backend is the single source of truth for all auth logic.
+ */
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const router = useRouter();
-  const hasRedirected = useRef(false);
-
-  useEffect(() => {
-    // Don't do anything while loading
-    if (isLoading) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      if (!hasRedirected.current) {
-        hasRedirected.current = true;
-        router.push("/login");
-      }
-      return;
-    }
-
-    // Wait for user to be loaded
-    if (!user) {
-      return;
-    }
-
-    // Reset redirect flag if user becomes verified
-    if (user.is_email_verified) {
-      hasRedirected.current = false;
-      return;
-    }
-
-    // If user is not verified, redirect (only once)
-    if (!user.is_email_verified && !hasRedirected.current) {
-      hasRedirected.current = true;
-      router.push("/send-verification-email");
-    }
-  }, [isAuthenticated, isLoading, user, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-rose-500 border-t-transparent mx-auto"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  // If user is not verified, show loading while redirect happens
-  // The useEffect will handle the actual redirect
-  if (user && !user.is_email_verified) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-rose-500 border-t-transparent mx-auto"></div>
-          <p className="text-gray-600">Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // No client-side auth checks needed:
+  // - Backend validates token on every API call (single source of truth)
+  // - API client handles 401/403 responses and redirects automatically
+  // - Pages can load normally; auth is enforced when they make API calls
   return <>{children}</>;
 }

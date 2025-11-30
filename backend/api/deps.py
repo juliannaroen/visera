@@ -1,24 +1,49 @@
 """API dependencies"""
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from core.database import get_db
+from core.config import settings
 from core.security import verify_token
 from models.user import User
 
+security = HTTPBearer(auto_error=False)
 
-security = HTTPBearer()
+
+def get_token_from_request(request: Request, credentials: HTTPAuthorizationCredentials | None = None) -> str | None:
+    """
+    Extract JWT token from request.
+    Priority: 1) Cookie, 2) Authorization header (for API clients)
+    """
+    # Try cookie first (primary method for web app)
+    token = request.cookies.get(settings.auth_cookie_name)
+
+    # Fallback to Authorization header (for API clients or backwards compatibility)
+    if not token and credentials:
+        token = credentials.credentials
+
+    return token
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
     """
     Dependency to get the current authenticated user from JWT token.
+    Reads token from httpOnly cookie (primary) or Authorization header (fallback).
     Can be used in other endpoints that require authentication.
     """
-    token = credentials.credentials
+    token = get_token_from_request(request, credentials)
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     payload = verify_token(token)
 
     if payload is None:
@@ -48,17 +73,20 @@ def get_current_user(
 
 
 def get_optional_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db)
 ) -> User | None:
     """
     Optional dependency to get the current authenticated user from JWT token.
+    Reads token from httpOnly cookie (primary) or Authorization header (fallback).
     Returns None if not authenticated instead of raising an exception.
     """
-    if credentials is None:
+    token = get_token_from_request(request, credentials)
+
+    if not token:
         return None
 
-    token = credentials.credentials
     payload = verify_token(token)
 
     if payload is None:

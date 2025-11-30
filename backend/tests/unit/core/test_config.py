@@ -7,54 +7,76 @@ from core.config import get_cors_config
 class TestGetCorsConfig:
     """Test suite for get_cors_config function"""
 
-    def test_get_cors_config_default(self):
-        """Test CORS config with default values"""
-        # Clear VERCEL_PROD_URL if set
-        original_value = os.environ.pop("VERCEL_PROD_URL", None)
+    def test_get_cors_config_single_origin(self):
+        """Test CORS config with single origin"""
+        original_value = os.environ.get("ALLOWED_ORIGINS")
         try:
+            os.environ["ALLOWED_ORIGINS"] = "https://example.com"
             config = get_cors_config()
 
             assert "allow_origins" in config
-            assert "http://localhost:3000" in config["allow_origins"]
+            assert "https://example.com" in config["allow_origins"]
+            assert len(config["allow_origins"]) == 1
             assert config["allow_origin_regex"] == r"https://.*\.vercel\.app"
             assert config["allow_credentials"] is True
             assert "*" in config["allow_methods"]
             assert "*" in config["allow_headers"]
         finally:
             if original_value:
-                os.environ["VERCEL_PROD_URL"] = original_value
+                os.environ["ALLOWED_ORIGINS"] = original_value
+            else:
+                os.environ.pop("ALLOWED_ORIGINS", None)
 
-    def test_get_cors_config_with_vercel_url(self):
-        """Test CORS config with VERCEL_PROD_URL set"""
-        original_value = os.environ.get("VERCEL_PROD_URL")
+    def test_get_cors_config_multiple_origins(self):
+        """Test CORS config with multiple comma-separated origins"""
+        original_value = os.environ.get("ALLOWED_ORIGINS")
         try:
-            os.environ["VERCEL_PROD_URL"] = "https://example.com,https://app.example.com"
+            os.environ["ALLOWED_ORIGINS"] = "https://example.com,https://app.example.com,http://localhost:3000"
             config = get_cors_config()
 
             assert "allow_origins" in config
             assert "https://example.com" in config["allow_origins"]
             assert "https://app.example.com" in config["allow_origins"]
             assert "http://localhost:3000" in config["allow_origins"]
+            assert len(config["allow_origins"]) == 3
         finally:
             if original_value:
-                os.environ["VERCEL_PROD_URL"] = original_value
+                os.environ["ALLOWED_ORIGINS"] = original_value
             else:
-                os.environ.pop("VERCEL_PROD_URL", None)
+                os.environ.pop("ALLOWED_ORIGINS", None)
 
-    def test_get_cors_config_with_empty_vercel_url(self):
-        """Test CORS config with empty VERCEL_PROD_URL"""
-        original_value = os.environ.get("VERCEL_PROD_URL")
+    def test_get_cors_config_with_whitespace(self):
+        """Test CORS config handles whitespace in comma-separated values"""
+        original_value = os.environ.get("ALLOWED_ORIGINS")
         try:
-            os.environ["VERCEL_PROD_URL"] = ""
+            os.environ["ALLOWED_ORIGINS"] = "https://example.com, https://app.example.com , http://localhost:3000"
             config = get_cors_config()
 
             assert "allow_origins" in config
+            assert "https://example.com" in config["allow_origins"]
+            assert "https://app.example.com" in config["allow_origins"]
             assert "http://localhost:3000" in config["allow_origins"]
-            # Empty strings should be filtered out
-            assert "" not in config["allow_origins"]
+            # Whitespace should be stripped
+            assert " https://app.example.com " not in config["allow_origins"]
         finally:
             if original_value:
-                os.environ["VERCEL_PROD_URL"] = original_value
+                os.environ["ALLOWED_ORIGINS"] = original_value
             else:
-                os.environ.pop("VERCEL_PROD_URL", None)
+                os.environ.pop("ALLOWED_ORIGINS", None)
+
+    def test_get_cors_config_removes_duplicates(self):
+        """Test CORS config removes duplicate origins"""
+        original_value = os.environ.get("ALLOWED_ORIGINS")
+        try:
+            os.environ["ALLOWED_ORIGINS"] = "https://example.com,https://example.com,https://app.example.com"
+            config = get_cors_config()
+
+            assert "allow_origins" in config
+            assert config["allow_origins"].count("https://example.com") == 1
+            assert len(config["allow_origins"]) == 2
+        finally:
+            if original_value:
+                os.environ["ALLOWED_ORIGINS"] = original_value
+            else:
+                os.environ.pop("ALLOWED_ORIGINS", None)
 

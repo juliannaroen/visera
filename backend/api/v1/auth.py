@@ -1,7 +1,8 @@
 """Authentication routes"""
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy.orm import Session
 from core.database import get_db
+from core.config import settings
 from schemas.auth import LoginRequest, LoginResponse, SendVerificationEmailRequest, VerifyEmailRequest
 from schemas.user import UserResponse
 from services.auth_service import authenticate_user
@@ -17,17 +18,35 @@ router = APIRouter()
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def login(
     login_data: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
     Authenticate a user with email and password.
 
-    Returns a JWT access token that can be used for authenticated requests.
+    Sets an httpOnly cookie with the JWT token and returns user information.
+    The cookie is automatically sent with subsequent requests.
 
     - **email**: User's email address
     - **password**: User's password
     """
-    return authenticate_user(db, login_data)
+    login_response = authenticate_user(db, login_data)
+
+    # Set httpOnly cookie with token
+    # httpOnly prevents JavaScript access (XSS protection)
+    # secure=True in production (HTTPS only)
+    # samesite="lax" provides CSRF protection
+    response.set_cookie(
+        key=settings.auth_cookie_name,
+        value=login_response.access_token,
+        httponly=True,
+        secure=settings.is_production,  # HTTPS only in production
+        samesite="lax",
+        max_age=settings.auth_cookie_max_age,
+        path="/"
+    )
+
+    return login_response
 
 
 @router.get("/me", response_model=UserResponse)
@@ -133,4 +152,18 @@ async def send_verification_email_endpoint(
         )
 
     return {"message": "Verification email sent successfully"}
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(response: Response):
+    """
+    Logout the current user by clearing the authentication cookie.
+    """
+    response.delete_cookie(
+        key=settings.auth_cookie_name,
+        path="/",
+        httponly=True,
+        samesite="lax"
+    )
+    return {"message": "Logged out successfully"}
 

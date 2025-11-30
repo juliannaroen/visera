@@ -2,12 +2,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
+from core.config import settings
 
 # Lazy initialization - only create engine when needed
 # This prevents import-time errors if DATABASE_URL is not set
@@ -18,10 +13,10 @@ def get_engine():
     """Get or create the database engine"""
     global engine
     if engine is None:
-        if not DATABASE_URL:
+        if not settings.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
         engine = create_engine(
-            DATABASE_URL,
+            settings.database_url,
             pool_pre_ping=True,  # Verify connections before using them
             pool_recycle=300,    # Recycle connections after 5 minutes
             echo=False           # Set to True for SQL query logging

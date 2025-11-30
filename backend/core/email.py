@@ -3,36 +3,19 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
-import os
+from core.config import settings
 
 
 def get_smtp_config():
     """
-    Get SMTP configuration from environment variables.
+    Get SMTP configuration.
 
     Supports various SMTP providers:
     - SendGrid: SMTP_HOST=smtp.sendgrid.net, SMTP_USER=apikey, SMTP_PASSWORD=your-api-key
     - Gmail: SMTP_HOST=smtp.gmail.com, SMTP_USER=your-email, SMTP_PASSWORD=app-password
     - Mailgun: SMTP_HOST=smtp.mailgun.org, SMTP_USER=your-username, SMTP_PASSWORD=your-password
     """
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
-
-    # Debug logging (will show in Cloud Run logs)
-    if not smtp_user:
-        print("WARNING: SMTP_USER environment variable is not set")
-    if not smtp_password:
-        print("WARNING: SMTP_PASSWORD environment variable is not set")
-    else:
-        print(f"DEBUG: SMTP_PASSWORD is set (length: {len(smtp_password)})")
-
-    return {
-        "host": os.getenv("SMTP_HOST", "smtp.sendgrid.net"),  # Default to SendGrid
-        "port": int(os.getenv("SMTP_PORT", "587")),
-        "user": smtp_user,
-        "password": smtp_password,
-        "from_email": os.getenv("SMTP_FROM_EMAIL", smtp_user),
-    }
+    return settings.get_smtp_config()
 
 
 def get_verification_email_template(user_email: str, verification_link: str) -> str:
@@ -91,9 +74,9 @@ def send_email(
     if smtp_config is None:
         smtp_config = get_smtp_config()
 
-    # Validate required configuration
-    if not smtp_config.get("user") or not smtp_config.get("password"):
-        raise ValueError("SMTP_USER and SMTP_PASSWORD must be set")
+    # Validate required configuration (safety check - config should ensure these are set)
+    if not smtp_config.get("user") or not smtp_config.get("password") or not smtp_config.get("from_email"):
+        raise ValueError("SMTP_USER, SMTP_PASSWORD, and SMTP_FROM_EMAIL must be set")
 
     try:
         # Create message
@@ -139,8 +122,7 @@ def send_verification_email(user_email: str, verification_token: str) -> bool:
     Returns:
         True if email sent successfully, False otherwise
     """
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    verification_link = f"{frontend_url}/verify-email?token={verification_token}"
+    verification_link = f"{settings.frontend_url}/verify-email?token={verification_token}"
 
     html_body = get_verification_email_template(user_email, verification_link)
     subject = "Verify your email address"

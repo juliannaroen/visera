@@ -32,4 +32,10 @@ export const authApi = {
       body: JSON.stringify({ token }),
     });
   },
+
+  logout: async (): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>("/api/v1/auth/logout", {
+      method: "POST",
+    });
+  },
 };

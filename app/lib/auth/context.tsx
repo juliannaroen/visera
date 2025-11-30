@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "../api/auth";
-import { tokenStorage, userStorage, clearAuthStorage } from "./storage";
+import { userStorage, clearAuthStorage } from "./storage";
 import type {
   User,
   LoginRequest,
@@ -35,40 +35,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   });
-  const [token, setToken] = useState<string | null>(() => {
-    return tokenStorage.getToken();
-  });
-  // Initialize loading to false since we're using lazy initialization
-  // If we have a token but no user, we'll fetch the user in useEffect
+  // No token state needed - authentication handled via httpOnly cookies
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const logout = useCallback(() => {
-    setToken(null);
-    setUser(null);
-    clearAuthStorage();
-    router.push("/login");
+  const logout = useCallback(async () => {
+    try {
+      // Call backend logout endpoint to clear cookie
+      await authApi.logout();
+    } catch (error) {
+      // Even if logout API call fails, clear local state
+      console.error("Logout error:", error);
+    } finally {
+      // Clear local user state
+      setUser(null);
+      clearAuthStorage();
+      router.push("/login");
+    }
   }, [router]);
 
   const refreshUser = useCallback(async () => {
-    if (!token) return;
     try {
+      // Cookie is automatically sent by browser
       const userData = await authApi.getCurrentUser();
       setUser(userData);
       userStorage.setUser(JSON.stringify(userData));
     } catch (error) {
-      // Token is invalid, clear auth
-      logout();
+      // Cookie is invalid/expired, clear auth
+      // API client will handle redirect
+      setUser(null);
+      clearAuthStorage();
       throw error;
     }
-  }, [token, logout]);
+  }, []);
 
   const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
+      // Backend sets httpOnly cookie on successful login
       const response = await authApi.login(credentials);
-      setToken(response.access_token);
+      // Update local user state (cookie is handled by backend)
       setUser(response.user);
-      tokenStorage.setToken(response.access_token);
       userStorage.setUser(JSON.stringify(response.user));
       return response;
     } catch (error) {
@@ -76,29 +82,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Verify token and fetch user on mount if token exists
+  // Fetch user on mount if we have stored user data but want to refresh
+  // Cookie is automatically sent by browser
   useEffect(() => {
-    if (token && !user) {
-      // Use a separate async function to avoid calling setState directly in effect
+    // If we have stored user data, try to refresh it
+    // This validates the cookie is still valid
+    const storedUser = userStorage.getUser();
+    if (storedUser && !user) {
       const fetchUser = async () => {
         setIsLoading(true);
         try {
           await refreshUser();
         } catch {
-          // Token is invalid, clear auth
-          logout();
+          // Cookie is invalid/expired, clear auth
+          // API client will handle redirect
+          setUser(null);
+          clearAuthStorage();
         } finally {
           setIsLoading(false);
         }
       };
       fetchUser();
     }
-  }, [token, user, refreshUser, logout]);
+  }, [user, refreshUser]);
 
   const value: AuthContextType = {
     user,
-    token,
-    isAuthenticated: !!user && !!token,
+    token: null, // Token is in httpOnly cookie, not accessible to JavaScript
+    isAuthenticated: !!user, // User presence indicates auth (validated by backend)
     isLoading,
     login,
     logout,
