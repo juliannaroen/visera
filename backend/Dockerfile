@@ -26,9 +26,9 @@ RUN pdm install --no-self -G test && \
 COPY . .
 
 # Expose port (Cloud Run will set PORT env var)
-EXPOSE 8001
+EXPOSE 8080
 
 # Run the application
-# Cloud Run sets PORT environment variable, default to 8001 for local development
-CMD sh -c "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}"
+# Cloud Run sets PORT environment variable, default to 8080 for local development
+CMD sh -c "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"
 

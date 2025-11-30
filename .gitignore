@@ -62,3 +62,6 @@ build/
 # GitHub Actions
 github-actions-key.json
 *.json.key
+
+# scripts
+scripts/check-prod-secrets.sh

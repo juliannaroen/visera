@@ -77,7 +77,7 @@ jobs:
             --source ./backend \
             --region ${{ env.REGION }} \
             --allow-unauthenticated \
-            --port 8001 \
+            --port 8080 \
             --project ${{ env.PROJECT_ID }}
 
       - name: Get Service URL

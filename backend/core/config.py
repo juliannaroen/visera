@@ -56,7 +56,8 @@ class Settings:
 
     # App Configuration
     environment: str = _get_required_env("ENVIRONMENT")
-    port: int = _get_required_int_env("PORT")
+    # PORT is set automatically by Cloud Run, but we provide a default for local development
+    port: int = int(os.getenv("PORT", "8080"))
 
     @property
     def is_production(self) -> bool:
