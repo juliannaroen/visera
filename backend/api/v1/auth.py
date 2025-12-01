@@ -51,7 +51,7 @@ async def login(
         value=login_response.access_token,
         httponly=True,
         secure=settings.is_production,  # HTTPS only in production (required for SameSite=None)
-        samesite="none"
+        samesite="none",
         max_age=settings.auth_cookie_max_age,
         path="/"
     )
@@ -99,7 +99,7 @@ async def verify_otp(
         value=access_token,
         httponly=True,
         secure=settings.is_production,  # HTTPS only in production (required for SameSite=None)
-        samesite="none"
+        samesite="none",
         max_age=settings.auth_cookie_max_age,
         path="/"
     )
