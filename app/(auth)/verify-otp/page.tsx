@@ -43,6 +43,17 @@ function VerifyOtpContent() {
     if (sanitized && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
+
+    // Auto-submit when all 6 digits are entered
+    const updatedCode = newOtp.join("");
+    if (updatedCode.length === 6 && !isSubmitting && email) {
+      // Create a synthetic event and pass the code directly
+      const syntheticEvent = new Event("submit", {
+        bubbles: true,
+        cancelable: true,
+      }) as unknown as React.FormEvent<HTMLFormElement>;
+      handleSubmit(syntheticEvent, updatedCode);
+    }
   };
 
   const handleKeyDown = (
@@ -68,17 +79,26 @@ function VerifyOtpContent() {
         setOtp(newOtp);
         if (sanitized.length === 6) {
           inputRefs.current[5]?.focus();
+          // Auto-submit when all 6 digits are pasted
+          if (!isSubmitting && email) {
+            const syntheticEvent = new Event("submit", {
+              bubbles: true,
+              cancelable: true,
+            }) as unknown as React.FormEvent<HTMLFormElement>;
+            handleSubmit(syntheticEvent, sanitized);
+          }
         }
       });
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, codeOverride?: string) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
-    const code = otp.join("");
+    // Use override code if provided (for auto-submit), otherwise use state
+    const code = codeOverride || otp.join("");
     if (code.length !== 6) {
       setError("Please enter the complete 6-digit code");
       setIsSubmitting(false);
