@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/hooks";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user, logout, refreshUser } = useAuth();
   const searchParams = useSearchParams();
   const [verificationError, setVerificationError] = useState<string | null>(
@@ -95,5 +95,30 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200">
+          <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto max-w-4xl">
+              <div className="mb-6 flex items-center justify-between rounded-2xl bg-white p-6 shadow-lg">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    Dashboard
+                  </h1>
+                  <p className="mt-2 text-gray-600">Loading...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
