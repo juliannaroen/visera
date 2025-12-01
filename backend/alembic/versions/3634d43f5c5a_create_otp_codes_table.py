@@ -19,9 +19,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Clean up enum type if it exists from a previous failed migration
-    op.execute("DROP TYPE IF EXISTS otptype")
-
     op.create_table(
         'otp_codes',
         sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True, nullable=False),

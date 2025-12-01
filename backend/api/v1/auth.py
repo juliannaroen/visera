@@ -44,14 +44,14 @@ async def login(
 
     # User is verified - set httpOnly cookie with token
     # httpOnly prevents JavaScript access (XSS protection)
-    # secure=True in production (HTTPS only)
-    # samesite="lax" provides CSRF protection
+    # secure=True in production (HTTPS only, required for SameSite=None)
+    # samesite="none" for cross-origin requests (frontend and backend on different domains in prod)
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=login_response.access_token,
         httponly=True,
-        secure=settings.is_production,  # HTTPS only in production
-        samesite="lax",
+        secure=settings.is_production,  # HTTPS only in production (required for SameSite=None)
+        samesite="none"
         max_age=settings.auth_cookie_max_age,
         path="/"
     )
@@ -93,12 +93,13 @@ async def verify_otp(
     access_token = create_access_token(data={"sub": str(verified_user.id), "email": verified_user.email})
 
     # Set httpOnly cookie with token
+    # samesite="none" for cross-origin requests (frontend and backend on different domains in prod)
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=access_token,
         httponly=True,
-        secure=settings.is_production,
-        samesite="lax",
+        secure=settings.is_production,  # HTTPS only in production (required for SameSite=None)
+        samesite="none"
         max_age=settings.auth_cookie_max_age,
         path="/"
     )
@@ -160,7 +161,8 @@ async def logout(response: Response):
         key=settings.auth_cookie_name,
         path="/",
         httponly=True,
-        samesite="lax"
+        samesite="none",
+        secure=settings.is_production  # Required for SameSite=None
     )
     return {"message": "Logged out successfully"}
 
