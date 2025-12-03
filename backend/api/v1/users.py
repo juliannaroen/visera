@@ -40,7 +40,7 @@ async def delete_account(
     soft_delete_user(db, current_user.id)
 
     # Clear the authentication cookie to log the user out immediately
-    cookie_settings = settings.get_session_cookie_settings()
+    cookie_settings = settings.get_auth_cookie_settings()
     response.delete_cookie(
         key=settings.auth_cookie_name,
         **cookie_settings

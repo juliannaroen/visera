@@ -43,7 +43,7 @@ async def login(
         return login_response
 
     # User is verified - set httpOnly cookie with token
-    cookie_settings = settings.get_session_cookie_settings()
+    cookie_settings = settings.get_auth_cookie_settings()
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=login_response.access_token,
@@ -88,7 +88,7 @@ async def verify_otp(
     access_token = create_access_token(data={"sub": str(verified_user.id), "email": verified_user.email})
 
     # Set httpOnly cookie with token
-    cookie_settings = settings.get_session_cookie_settings()
+    cookie_settings = settings.get_auth_cookie_settings()
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=access_token,
@@ -149,7 +149,7 @@ async def logout(response: Response):
     """
     Logout the current user by clearing the authentication cookie.
     """
-    cookie_settings = settings.get_session_cookie_settings()
+    cookie_settings = settings.get_auth_cookie_settings()
     response.delete_cookie(
         key=settings.auth_cookie_name,
         **cookie_settings

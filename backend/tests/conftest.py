@@ -1,10 +1,34 @@
 """Shared pytest fixtures"""
 import os
 
-# Set JWT_SECRET_KEY before any imports that might use it
-# This ensures core.security.SECRET_KEY is set correctly at import time
+# Set required environment variables before any imports that might use them
+# This ensures Settings is initialized correctly at import time
 if not os.getenv("JWT_SECRET_KEY"):
     os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+if not os.getenv("AUTH_COOKIE_NAME"):
+    os.environ["AUTH_COOKIE_NAME"] = "test.sid"
+if not os.getenv("AUTH_COOKIE_MAX_AGE"):
+    os.environ["AUTH_COOKIE_MAX_AGE"] = "3600"
+if not os.getenv("JWT_EXPIRE_MINUTES"):
+    os.environ["JWT_EXPIRE_MINUTES"] = "30"
+if not os.getenv("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+if not os.getenv("SMTP_HOST"):
+    os.environ["SMTP_HOST"] = "smtp.test.com"
+if not os.getenv("SMTP_PORT"):
+    os.environ["SMTP_PORT"] = "587"
+if not os.getenv("SMTP_USER"):
+    os.environ["SMTP_USER"] = "test@test.com"
+if not os.getenv("SMTP_PASSWORD"):
+    os.environ["SMTP_PASSWORD"] = "testpass"
+if not os.getenv("SMTP_FROM_EMAIL"):
+    os.environ["SMTP_FROM_EMAIL"] = "test@test.com"
+if not os.getenv("FRONTEND_URL"):
+    os.environ["FRONTEND_URL"] = "http://localhost:3000"
+if not os.getenv("ALLOWED_ORIGINS"):
+    os.environ["ALLOWED_ORIGINS"] = "http://localhost:3000"
+if not os.getenv("ENVIRONMENT"):
+    os.environ["ENVIRONMENT"] = "test"
 
 import pytest
 from fastapi.testclient import TestClient
