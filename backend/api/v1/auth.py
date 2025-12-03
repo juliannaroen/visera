@@ -43,17 +43,12 @@ async def login(
         return login_response
 
     # User is verified - set httpOnly cookie with token
-    # httpOnly prevents JavaScript access (XSS protection)
-    # secure=True in production (HTTPS only, required for SameSite=None)
-    # samesite="none" for cross-origin requests (frontend and backend on different domains in prod)
+    cookie_settings = settings.get_session_cookie_settings()
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=login_response.access_token,
-        httponly=True,
-        secure=settings.is_production,  # HTTPS only in production (required for SameSite=None)
-        samesite="none",
         max_age=settings.auth_cookie_max_age,
-        path="/"
+        **cookie_settings
     )
 
     return login_response
@@ -93,15 +88,12 @@ async def verify_otp(
     access_token = create_access_token(data={"sub": str(verified_user.id), "email": verified_user.email})
 
     # Set httpOnly cookie with token
-    # samesite="none" for cross-origin requests (frontend and backend on different domains in prod)
+    cookie_settings = settings.get_session_cookie_settings()
     response.set_cookie(
         key=settings.auth_cookie_name,
         value=access_token,
-        httponly=True,
-        secure=settings.is_production,  # HTTPS only in production (required for SameSite=None)
-        samesite="none",
         max_age=settings.auth_cookie_max_age,
-        path="/"
+        **cookie_settings
     )
 
     return LoginResponse(
@@ -157,12 +149,10 @@ async def logout(response: Response):
     """
     Logout the current user by clearing the authentication cookie.
     """
+    cookie_settings = settings.get_session_cookie_settings()
     response.delete_cookie(
         key=settings.auth_cookie_name,
-        path="/",
-        httponly=True,
-        samesite="none",
-        secure=settings.is_production  # Required for SameSite=None
+        **cookie_settings
     )
     return {"message": "Logged out successfully"}
 

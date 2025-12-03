@@ -27,12 +27,10 @@ async def unauthorized_exception_handler(request: Request, exc: HTTPException):
         content={"detail": exc.detail},
     )
     # Clear the cookie with same settings used when setting it
+    cookie_settings = settings.get_session_cookie_settings()
     response.delete_cookie(
-        key=settings.auth_cookie_name,
-        path="/",
-        httponly=True,
-        samesite="none",
-        secure=settings.is_production,
+        key=settings.session_cookie_name,
+        **cookie_settings
     )
     return response
 
