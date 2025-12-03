@@ -1,7 +1,8 @@
 """Database configuration and session management"""
+from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 # Lazy initialization - only create engine when needed
 # This prevents import-time errors if DATABASE_URL is not set
@@ -42,3 +43,22 @@ def get_db():
     finally:
         db.close()
 
+
+@contextmanager
+def transaction(db: Session):
+    """Context manager for database transactions.
+
+    Ensures all operations are committed atomically or rolled back on error.
+
+    Usage:
+        with transaction(db):
+            user.email = "new@example.com"
+            user.name = "New Name"
+            # All changes committed atomically
+    """
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise

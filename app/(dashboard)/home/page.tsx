@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useAuth } from "@/lib/auth/hooks";
 
 function DashboardContent() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200">
       <div className="container mx-auto px-4 py-8">
@@ -14,12 +14,6 @@ function DashboardContent() {
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
               <p className="mt-2 text-gray-600">Welcome back, {user?.email}!</p>
             </div>
-            <button
-              onClick={logout}
-              className="rounded-lg bg-rose-500 px-4 py-2 font-semibold text-white transition-colors duration-300 ease-in-out hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
-            >
-              Sign Out
-            </button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">

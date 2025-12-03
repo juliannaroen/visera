@@ -1,9 +1,12 @@
 """User service - business logic for user operations"""
+import hashlib
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from models.user import User
 from schemas.user import UserCreate, UserResponse
 from core.security import hash_password
+from core.database import transaction
 
 
 def create_user(db: Session, user_data: UserCreate) -> UserResponse:
@@ -49,7 +52,10 @@ def create_user(db: Session, user_data: UserCreate) -> UserResponse:
 
 def get_user_by_id(db: Session, user_id: int) -> User:
     """Get a user by ID"""
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.deleted_at.is_(None)
+    ).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -60,7 +66,27 @@ def get_user_by_id(db: Session, user_id: int) -> User:
 
 def get_user_by_email(db: Session, email: str) -> User | None:
     """Get a user by email"""
-    return db.query(User).filter(User.email == email).first()
+    return db.query(User).filter(
+        User.email == email,
+        User.deleted_at.is_(None)
+        ).first()
+
+
+def soft_delete_user(db: Session, user_id: int) -> User:
+    """Soft delete a user account (GDPR compliant)"""
+    with transaction(db):
+        user = get_user_by_id(db, user_id)
+
+        # Hash the email (one-way, GDPR compliant)
+        email_hash = hashlib.sha256(user.email.encode()).hexdigest()
+        user.email = f"deleted_{user.id}_{email_hash[:16]}@deleted.local"
+
+        # Clear password for extra security
+        user.hashed_password = None
+
+        user.deleted_at = datetime.now(timezone.utc)
+
+    return user
 
 
 def verify_user_email(db: Session, user_id: int) -> User:

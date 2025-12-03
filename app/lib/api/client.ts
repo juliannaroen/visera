@@ -97,6 +97,11 @@ export async function apiRequest<T>(
     throw new Error(errorMessage);
   }
 
+  // Handle 204 No Content - no body to parse
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   // Handle empty responses
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {

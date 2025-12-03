@@ -102,6 +102,29 @@ class Settings:
             "from_email": self.smtp_from_email,
         }
 
+    def get_auth_cookie_settings(self) -> dict:
+        """
+        Get authentication session cookie settings.
+        Returns a dictionary of cookie parameters for set_cookie/delete_cookie.
+
+        Includes all standard session cookie attributes:
+        - httponly: Prevents JavaScript access (XSS protection)
+        - secure: HTTPS only (required for SameSite="none")
+        - samesite: Cross-origin cookie policy
+        - path: Cookie path scope
+        - domain: Cookie domain scope (None = current domain)
+
+        Note: secure=True is required when using SameSite="none" (browser requirement).
+        Modern browsers allow secure=True cookies on localhost even over HTTP for development.
+        """
+        return {
+            "httponly": True,
+            "secure": True,  # Required for SameSite="none"
+            "samesite": "none",
+            "path": "/",
+            "domain": None,  # Current domain (can be overridden if needed)
+        }
+
 
 # Global settings instance
 settings = Settings()

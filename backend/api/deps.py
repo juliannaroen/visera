@@ -54,6 +54,7 @@ def get_current_user(
         )
 
     user_id = payload.get("sub")
+
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -61,13 +62,38 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = db.query(User).filter(User.id == int(user_id)).first()
-    if user is None:
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
+            detail="Invalid user ID in token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # First check if user exists at all (even if soft-deleted)
+    user_any = db.query(User).filter(User.id == user_id_int).first()
+
+    # Query for active user (not soft-deleted)
+    user = db.query(User).filter(
+        User.id == user_id_int,
+        User.deleted_at.is_(None)
+    ).first()
+
+    if user is None:
+        # Provide more specific error message
+        if user_any and user_any.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account has been deleted",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
     return user
 
