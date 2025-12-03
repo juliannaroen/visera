@@ -17,8 +17,6 @@ app/
 │   │   └── page.tsx          # Signup page → /signup
 │   ├── verify-otp/
 │   │   └── page.tsx          # OTP verification page → /verify-otp
-│   └── send-verification-email/
-│       └── page.tsx          # Resend verification email → /send-verification-email
 ├── (dashboard)/               # Route group for protected pages
 │   ├── layout.tsx            # Protected layout with sidebar (requires auth)
 │   ├── common/

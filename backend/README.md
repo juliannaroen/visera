@@ -347,7 +347,7 @@ The backend requires the following environment variables. See the root README fo
 - `POST /login` - Authenticate user with email/password
 - `POST /signup` - Create new user account
 - `POST /verify-otp` - Verify email with OTP code
-- `POST /send-verification-email` - Resend OTP email
+- `POST /send-otp-email` - Send OTP email for email verification
 - `GET /me` - Get current user information
 - `POST /logout` - Logout and clear session cookie
 
