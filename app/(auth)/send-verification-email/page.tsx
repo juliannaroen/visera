@@ -17,7 +17,7 @@ export default function SendVerificationEmailPage() {
   // Only redirect if authenticated and verified
   useEffect(() => {
     if (isAuthenticated && user?.is_email_verified) {
-      router.push("/dashboard");
+      router.push("/home");
     }
   }, [isAuthenticated, user, router]);
 

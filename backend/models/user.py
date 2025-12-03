@@ -12,4 +12,5 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_email_verified = Column(Boolean, nullable=False, server_default=text('false'))
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 

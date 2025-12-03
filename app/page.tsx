@@ -19,7 +19,7 @@ export default function Home() {
     // Only redirect to dashboard if user is authenticated AND verified
     // Unverified users can stay on the landing page
     if (isAuthenticated && user && user.is_email_verified) {
-      router.push("/dashboard");
+      router.push("/home");
     }
   }, [isAuthenticated, user, isLoading, router]);
 

@@ -29,7 +29,7 @@ export default function LoginPage() {
     if (isAuthenticated) {
       // Check if email is verified
       if (user && user.is_email_verified) {
-        router.push("/dashboard");
+        router.push("/home");
       } else if (user && !user.is_email_verified) {
         // User is authenticated but not verified, redirect to OTP verification
         router.push(`/verify-otp?email=${encodeURIComponent(user.email)}`);
@@ -60,7 +60,7 @@ export default function LoginPage() {
         );
       } else {
         // Email is verified, proceed to dashboard
-        router.push("/dashboard");
+        router.push("/home");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

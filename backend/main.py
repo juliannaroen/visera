@@ -1,11 +1,13 @@
 """Main FastAPI application"""
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from core.config import get_cors_config
+from core.config import get_cors_config, settings
 from core.database import get_db
 from api.v1 import auth, users
+from fastapi import status
 
 app = FastAPI(title="Visera API", version="1.0.0")
 
@@ -15,6 +17,24 @@ app.add_middleware(
     CORSMiddleware,
     **cors_config
 )
+
+# Exception handler to clear session cookie on 401
+@app.exception_handler(status.HTTP_401_UNAUTHORIZED)
+async def unauthorized_exception_handler(request: Request, exc: HTTPException):
+    """Clear auth cookie on 401 Unauthorized responses"""
+    response = JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": exc.detail},
+    )
+    # Clear the cookie with same settings used when setting it
+    response.delete_cookie(
+        key=settings.auth_cookie_name,
+        path="/",
+        httponly=True,
+        samesite="none",
+        secure=settings.is_production,
+    )
+    return response
 
 # Include routers with API versioning
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])

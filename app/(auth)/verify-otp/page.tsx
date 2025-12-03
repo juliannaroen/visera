@@ -119,7 +119,7 @@ function VerifyOtpContent() {
       await refreshUser();
 
       // Redirect to dashboard
-      router.push("/dashboard");
+      router.push("/home");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Invalid verification code"
