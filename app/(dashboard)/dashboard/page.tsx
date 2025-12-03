@@ -1,43 +1,14 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { useAuth } from "@/lib/auth/hooks";
 
 function DashboardContent() {
-  const { user, logout, refreshUser } = useAuth();
-  const searchParams = useSearchParams();
-  const [verificationError, setVerificationError] = useState<string | null>(
-    null
-  );
-
-  // Check for verification error from backend redirect
-  useEffect(() => {
-    const error = searchParams.get("error");
-    if (error) {
-      setVerificationError(error);
-      // Remove error from URL
-      window.history.replaceState({}, "", "/dashboard");
-      // Refresh user data in case verification succeeded despite error param
-      refreshUser();
-    } else {
-      // Refresh user data when arriving at dashboard (in case email was just verified)
-      refreshUser();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
+  const { user, logout } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200">
       <div className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-4xl">
-          {verificationError && (
-            <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-              <p className="text-sm text-red-800">
-                Email verification failed. Please try again or contact support.
-              </p>
-            </div>
-          )}
           <div className="mb-6 flex items-center justify-between rounded-2xl bg-white p-6 shadow-lg">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
