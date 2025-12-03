@@ -256,11 +256,11 @@ class TestGetCurrentUser:
         assert "detail" in data
 
 
-class TestSendVerificationEmail:
-    """Test suite for POST /api/v1/auth/send-verification-email endpoint"""
+class TestSendOtpEmail:
+    """Test suite for POST /api/v1/auth/send-otp-email endpoint"""
 
-    def test_send_verification_email_success(self, test_client, test_session):
-        """Test successfully sending verification email"""
+    def test_send_otp_email_success(self, test_client, test_session):
+        """Test successfully sending OTP email"""
         # Set JWT_SECRET_KEY if not set
         if not os.getenv("JWT_SECRET_KEY"):
             os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
@@ -268,12 +268,9 @@ class TestSendVerificationEmail:
         # Create an unverified user
         user = create_user_model(test_session, email="test@example.com", is_email_verified=False)
 
-        # Create a valid token
-        token = create_access_token(data={"sub": str(user.id), "email": user.email})
-
         response = test_client.post(
-            "/api/v1/auth/send-verification-email",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/send-otp-email",
+            json={"email": user.email}
         )
 
         # Note: This will likely fail if SMTP is not configured, but we test the endpoint logic
@@ -282,8 +279,8 @@ class TestSendVerificationEmail:
         data = response.json()
         assert "detail" in data or "message" in data
 
-    def test_send_verification_email_already_verified(self, test_client, test_session):
-        """Test sending verification email when already verified"""
+    def test_send_otp_email_already_verified(self, test_client, test_session):
+        """Test sending OTP email when already verified"""
         # Set JWT_SECRET_KEY if not set
         if not os.getenv("JWT_SECRET_KEY"):
             os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
@@ -291,12 +288,9 @@ class TestSendVerificationEmail:
         # Create a verified user
         user = create_user_model(test_session, email="test@example.com", is_email_verified=True)
 
-        # Create a valid token
-        token = create_access_token(data={"sub": str(user.id), "email": user.email})
-
         response = test_client.post(
-            "/api/v1/auth/send-verification-email",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/send-otp-email",
+            json={"email": user.email}
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -304,12 +298,11 @@ class TestSendVerificationEmail:
         assert "detail" in data
         assert "already verified" in data["detail"].lower()
 
-    def test_send_verification_email_no_email(self, test_client, test_session):
-        """Test sending verification email without email parameter"""
-        response = test_client.post("/api/v1/auth/send-verification-email")
+    def test_send_otp_email_no_email(self, test_client, test_session):
+        """Test sending OTP email without email parameter"""
+        response = test_client.post("/api/v1/auth/send-otp-email")
 
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         data = response.json()
         assert "detail" in data
-        assert "email" in data["detail"].lower() or "authentication" in data["detail"].lower()
 

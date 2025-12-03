@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.config import settings
-from schemas.auth import LoginRequest, LoginResponse, SendVerificationEmailRequest, VerifyOtpRequest
+from models.user import User
+from schemas.auth import LoginRequest, LoginResponse, SendOtpEmailRequest, VerifyOtpRequest
 from schemas.user import UserResponse
 from services.auth_service import (
     authenticate_user,
@@ -12,8 +13,7 @@ from services.auth_service import (
     verify_otp_code
 )
 from core.security import create_access_token
-from api.deps import get_current_user, get_verified_user, get_optional_current_user
-from models.user import User
+from api.deps import get_current_user, get_verified_user
 
 router = APIRouter()
 
@@ -108,40 +108,24 @@ async def verify_otp(
     )
 
 
-@router.post("/send-verification-email", status_code=status.HTTP_200_OK)
-async def send_verification_email_endpoint(
-    request: SendVerificationEmailRequest | None = None,
-    current_user: User | None = Depends(get_optional_current_user),
+@router.post("/send-otp-email", status_code=status.HTTP_200_OK)
+async def send_otp_email_endpoint(
+    request: SendOtpEmailRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Send email verification email.
-    Can be used with authentication (sends to current user) or with email parameter (no auth required).
+    Send OTP email for email verification.
+    Requires email in request body.
     """
-    if current_user:
-        # Authenticated user
-        if current_user.is_email_verified:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email is already verified"
-            )
-        success = send_verification_email(db, current_user.id)
-    elif request and request.email:
-        # Not authenticated, using email from request body
-        success = send_verification_email_by_email(db, request.email)
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either authentication required or email must be provided in request body"
-        )
+    success = send_verification_email_by_email(db, request.email)
 
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send verification email"
+            detail="Failed to send OTP email"
         )
 
-    return {"message": "Verification email sent successfully"}
+    return {"message": "OTP email sent successfully"}
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)

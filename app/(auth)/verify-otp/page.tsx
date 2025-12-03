@@ -142,7 +142,7 @@ function VerifyOtpContent() {
     setError(null);
 
     try {
-      await authApi.sendVerificationEmail(email);
+      await authApi.sendOtpEmail(email);
       // Clear OTP inputs
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();

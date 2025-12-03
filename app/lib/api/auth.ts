@@ -13,17 +13,11 @@ export const authApi = {
     return apiRequest<User>("/api/v1/auth/me");
   },
 
-  sendVerificationEmail: async (
-    email?: string
-  ): Promise<{ message: string }> => {
-    const body = email ? JSON.stringify({ email }) : undefined;
-    return apiRequest<{ message: string }>(
-      "/api/v1/auth/send-verification-email",
-      {
-        method: "POST",
-        body,
-      }
-    );
+  sendOtpEmail: async (email: string): Promise<{ message: string }> => {
+    return apiRequest<{ message: string }>("/api/v1/auth/send-otp-email", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
   },
 
   verifyOtp: async (email: string, code: string): Promise<LoginResponse> => {

@@ -19,6 +19,6 @@ class VerifyOtpRequest(BaseModel):
     code: str = Field(..., description="6-character OTP verification code", min_length=6, max_length=6)
 
 
-class SendVerificationEmailRequest(BaseModel):
-    email: EmailStr = Field(..., description="Email address to send verification to")
+class SendOtpEmailRequest(BaseModel):
+    email: EmailStr = Field(..., description="Email address to send OTP to")
 
