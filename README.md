@@ -6,13 +6,9 @@ A full-stack application with Next.js frontend, FastAPI backend, and PostgreSQL 
 
 ```
 visera/
-├── app/                    # Next.js frontend (App Router)
-├── backend/                # FastAPI backend
-│   ├── main.py            # FastAPI application
-│   ├── database.py        # Database configuration
-│   ├── models.py          # SQLAlchemy models
-│   └── pyproject.toml     # Python dependencies (pdm)
-├── docker-compose.yml      # Docker Compose configuration
+├── app/                   # Next.js frontend (App Router)
+├── backend/               # FastAPI backend
+├── docker-compose.yml     # Docker Compose configuration
 ├── Dockerfile             # Frontend Dockerfile
 └── backend/Dockerfile     # Backend Dockerfile
 ```
@@ -69,29 +65,59 @@ Make sure PostgreSQL is running locally, then update the `DATABASE_URL` in `back
 
 ## Environment Variables
 
-### Backend (.env in project root)
+### Backend
 
-Create a `.env` file in the project root with:
+The backend requires the following environment variables. Create a `.env` file in the `backend/` directory:
 
-```
+**Required Variables:**
+
+```bash
+# Authentication
+AUTH_COOKIE_NAME=dev.sid                    # Session cookie name
+AUTH_COOKIE_MAX_AGE=3600                    # Cookie max age in seconds
+JWT_SECRET_KEY=your-secret-key-here          # Secret key for JWT tokens
+JWT_EXPIRE_MINUTES=30                       # JWT token expiration time
+
+# Database
 DATABASE_URL=postgresql://visera_user:visera_password@postgres:5432/visera_db
+
+# Email (for OTP verification)
+SMTP_HOST=smtp.gmail.com                     # SMTP server host
+SMTP_PORT=587                                # SMTP server port
+SMTP_USER=your-email@gmail.com              # SMTP username
+SMTP_PASSWORD=your-app-password              # SMTP password
+SMTP_FROM_EMAIL=noreply@visera.com          # From email address
+
+# Application
+FRONTEND_URL=http://localhost:3000          # Frontend URL for CORS
+ALLOWED_ORIGINS=http://localhost:3000        # Comma-separated allowed origins
+ENVIRONMENT=development                      # Environment (development/production)
 ```
 
-For Google Cloud SQL, use:
+**For Docker Compose:**
 
-```
+The `DATABASE_URL` in docker-compose.yml will be automatically loaded. For other variables, you can either:
+
+- Set them in `docker-compose.yml` under the `backend` service `environment` section
+- Create a `.env` file in the project root (docker-compose will load it)
+
+**For Google Cloud SQL:**
+
+```bash
 DATABASE_URL=postgresql://user:password@cloud-sql-ip:5432/database?sslmode=require
 ```
 
-The `DATABASE_URL` will be automatically loaded by docker-compose and the backend.
-
 ### Frontend
 
-The frontend will connect to the backend at `http://localhost:8001` by default.
+The frontend will connect to the backend at `http://localhost:8001` by default. No environment variables are required for the frontend.
 
-## Next Steps
+## Features
 
-- [ ] Add authentication endpoints (sign in, sign up)
-- [ ] Connect frontend sign-in form to backend API
-- [ ] Add password hashing and JWT tokens
-- [ ] Add more database models as needed
+- ✅ User authentication (sign up, login, logout)
+- ✅ Email verification with OTP codes
+- ✅ JWT-based session management with httpOnly cookies
+- ✅ Protected routes and API endpoints
+- ✅ User account management (view profile, delete account)
+- ✅ GDPR-compliant soft deletion for account deletion
+- ✅ Password hashing with bcrypt
+- ✅ CORS configuration for cross-origin requests

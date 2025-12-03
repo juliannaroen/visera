@@ -324,6 +324,61 @@ gcloud run services describe visera-backend \
    - Check application logs for any missing variable errors
    - The application will raise clear errors if required variables are missing
 
+## Environment Variables
+
+The backend requires the following environment variables. See the root README for a complete list.
+
+**Required Variables:**
+
+- `AUTH_COOKIE_NAME` - Session cookie name (e.g., `dev.sid`)
+- `AUTH_COOKIE_MAX_AGE` - Cookie max age in seconds (e.g., `3600`)
+- `JWT_SECRET_KEY` - Secret key for JWT token signing
+- `JWT_EXPIRE_MINUTES` - JWT token expiration time in minutes
+- `DATABASE_URL` - PostgreSQL connection string
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` - Email configuration for OTP verification
+- `FRONTEND_URL` - Frontend URL for CORS and email links
+- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
+- `ENVIRONMENT` - Environment name (`development` or `production`)
+
+## API Endpoints
+
+### Authentication (`/api/v1/auth`)
+
+- `POST /login` - Authenticate user with email/password
+- `POST /signup` - Create new user account
+- `POST /verify-otp` - Verify email with OTP code
+- `POST /send-verification-email` - Resend OTP email
+- `GET /me` - Get current user information
+- `POST /logout` - Logout and clear session cookie
+
+### Users (`/api/v1/users`)
+
+- `POST /` - Create new user (public endpoint)
+- `DELETE /me` - Soft delete current user's account (GDPR compliant)
+
+### Account Deletion
+
+The `DELETE /api/v1/users/me` endpoint implements GDPR-compliant soft deletion:
+
+- User account is marked as deleted (`deleted_at` timestamp set)
+- Email is obfuscated (hashed and replaced with `deleted_{id}_{hash}@deleted.local`)
+- Password is cleared
+- Session cookie is automatically cleared
+- User data is retained for legal/compliance purposes
+- Soft-deleted users cannot authenticate or access the system
+
+## Session Cookie Configuration
+
+Session cookies are configured via `settings.get_auth_cookie_settings()` which returns:
+
+- `httponly=True` - Prevents JavaScript access (XSS protection)
+- `secure=True` - HTTPS only (required for `SameSite="none"`)
+- `samesite="none"` - Allows cross-origin requests
+- `path="/"` - Cookie available site-wide
+- `domain=None` - Current domain
+
+This configuration is used consistently across all cookie operations (set/delete).
+
 ## Database Migrations
 
 This project uses Alembic for database migrations.

@@ -11,15 +11,26 @@ The frontend uses a feature-based structure with Next.js route groups to organiz
 ```
 app/
 ├── (auth)/                    # Route group for authentication pages
-│   └── login/
-│       └── page.tsx          # Login page → /login
+│   ├── login/
+│   │   └── page.tsx          # Login page → /login
+│   ├── signup/
+│   │   └── page.tsx          # Signup page → /signup
+│   ├── verify-otp/
+│   │   └── page.tsx          # OTP verification page → /verify-otp
+│   └── send-verification-email/
+│       └── page.tsx          # Resend verification email → /send-verification-email
 ├── (dashboard)/               # Route group for protected pages
-│   ├── layout.tsx            # Protected layout (requires auth)
-│   └── dashboard/
-│       └── page.tsx          # Dashboard page → /dashboard
+│   ├── layout.tsx            # Protected layout with sidebar (requires auth)
+│   ├── common/
+│   │   └── Sidebar.tsx      # Sidebar navigation component
+│   ├── home/
+│   │   └── page.tsx          # Home page → /home
+│   └── settings/
+│       └── page.tsx          # Settings page → /settings
 ├── lib/                       # Shared utilities and business logic
 │   ├── api/                  # API client functions
 │   │   ├── auth.ts          # Authentication API calls
+│   │   ├── users.ts         # User API calls (account deletion)
 │   │   └── client.ts        # Base API client with token handling
 │   ├── auth/                 # Authentication utilities
 │   │   ├── context.tsx      # Auth context provider
@@ -43,12 +54,13 @@ Route groups are folders wrapped in parentheses like `(auth)` and `(dashboard)`.
 ### Example
 
 - `app/(auth)/login/page.tsx` → URL: `/login`
-- `app/(dashboard)/dashboard/page.tsx` → URL: `/dashboard`
+- `app/(dashboard)/home/page.tsx` → URL: `/home`
+- `app/(dashboard)/settings/page.tsx` → URL: `/settings`
 
 Without route groups, you would need:
 
 - `app/auth/login/page.tsx` → URL: `/auth/login` (longer URL)
-- `app/dashboard/page.tsx` → URL: `/dashboard` (no grouping)
+- `app/dashboard/home/page.tsx` → URL: `/dashboard/home` (longer URL)
 
 ## Key Directories
 
@@ -66,8 +78,9 @@ Contains shared utilities, API clients, and business logic:
 
 - **`api/`** - API client functions that handle HTTP requests to the backend
 
-  - `client.ts` - Base API client with automatic token injection
-  - `auth.ts` - Authentication-specific API calls
+  - `client.ts` - Base API client with automatic token injection and error handling
+  - `auth.ts` - Authentication-specific API calls (login, signup, verify OTP, logout)
+  - `users.ts` - User-specific API calls (account deletion)
 
 - **`auth/`** - Authentication system
 
@@ -79,13 +92,15 @@ Contains shared utilities, API clients, and business logic:
 
 ## Authentication Flow
 
-1. **Login** (`/login`) - User enters credentials
-2. **API Call** - `authApi.login()` sends credentials to backend
-3. **Token Storage** - JWT token stored in localStorage
-4. **Context Update** - Auth context updates with user and token
-5. **Redirect** - User redirected to `/dashboard`
-6. **Protected Routes** - Dashboard layout checks authentication
-7. **API Requests** - All API calls automatically include Bearer token
+1. **Signup** (`/signup`) - User creates account with email/password
+2. **OTP Email** - Backend sends OTP code to user's email
+3. **Verify OTP** (`/verify-otp`) - User enters OTP code to verify email
+4. **Session Created** - Backend sets httpOnly cookie with JWT token
+5. **Login** (`/login`) - Verified users can login (unverified users get new OTP)
+6. **Context Update** - Auth context updates with user information
+7. **Redirect** - User redirected to `/home`
+8. **Protected Routes** - Dashboard layout checks authentication
+9. **API Requests** - All API calls automatically include session cookie
 
 ## Protected Routes
 
@@ -94,7 +109,15 @@ The `(dashboard)/layout.tsx` file protects all routes under the dashboard group:
 - Checks if user is authenticated
 - Redirects to `/login` if not authenticated
 - Shows loading state while checking authentication
+- Renders sidebar navigation with "Home" and "Settings" links
 - Only renders children if authenticated
+
+### Dashboard Pages
+
+- **Home** (`/home`) - Main dashboard page
+- **Settings** (`/settings`) - User settings page with account deletion option
+  - View account information (email, user ID)
+  - Delete account (GDPR-compliant soft deletion)
 
 ## Adding New Features
 
@@ -109,6 +132,12 @@ Example:
 ```
 app/(dashboard)/settings/page.tsx → /settings (protected)
 ```
+
+The settings page includes:
+
+- Account information display
+- Account deletion with confirmation dialog
+- Automatic logout and redirect after deletion
 
 ### Adding a New Public Page
 
@@ -134,11 +163,19 @@ Example:
 import { apiRequest } from "./client";
 
 export const usersApi = {
-  getProfile: async () => {
-    return apiRequest<User>("/api/v1/users/profile");
+  deleteAccount: async (): Promise<void> => {
+    return apiRequest<void>("/api/v1/users/me", {
+      method: "DELETE",
+    });
   },
 };
 ```
+
+The API client automatically:
+
+- Includes session cookie in requests (httpOnly cookie set by backend)
+- Handles 401/403 errors by clearing auth state and redirecting to login
+- Handles 204 No Content responses (used for account deletion)
 
 ## TypeScript Path Aliases
 
