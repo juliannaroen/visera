@@ -117,6 +117,16 @@ async def send_otp_email_endpoint(
     Send OTP email for email verification.
     Requires email in request body.
     """
+    from services.user_service import get_user_by_email
+
+    # Check if user exists and is already verified
+    user = get_user_by_email(db, request.email)
+    if user and user.is_email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is already verified"
+        )
+
     success = send_verification_email_by_email(db, request.email)
 
     if not success:
