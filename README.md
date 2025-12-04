@@ -108,8 +108,8 @@ This section outlines potential improvements and enhancements for the applicatio
 
 - [ ] Add database query optimization and indexing analysis
 - [ ] Send emails asynchronously via a message queue
-- [ ] Implement caching layer (Redis) for frequently accessed data
-- [ ] Add database connection pooling optimization
+- [ ] Implement caching layer (Redis) for frequently accessed data on backend
+- [ ] Use state management library on frontend
 - [ ] Implement API response pagination for list endpoints
 - [ ] Add CDN for static assets
 - [ ] Optimize frontend bundle size and code splitting
