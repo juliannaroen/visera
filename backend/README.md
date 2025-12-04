@@ -2,7 +2,7 @@
 
 FastAPI backend for the Visera application.
 
-## Project Structure
+## Directory Structure
 
 The backend follows a feature-based architecture with clear separation of concerns:
 
@@ -43,53 +43,6 @@ This structure makes it easy to:
 - Maintain clear separation of concerns
 - Scale as the application grows
 
-## Prerequisites
-
-Install [pdm](https://pdm.fming.dev/):
-
-```bash
-# macOS/Linux
-curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
-
-# Or via pip
-pip install pdm
-```
-
-## Setup
-
-1. Install dependencies:
-
-```bash
-pdm install
-```
-
-2. Copy `.env.example` to `.env` and configure:
-
-```bash
-cp .env.example .env
-```
-
-3. Run the development server:
-
-```bash
-pdm run dev
-# Or: pdm run uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The API will be available at http://localhost:8000
-
-API documentation: http://localhost:8000/docs
-
-## Adding Dependencies
-
-```bash
-# Add a new dependency
-pdm add package-name
-
-# Add a dev dependency
-pdm add -dG dev package-name
-```
-
 ## Testing
 
 This project uses pytest for testing with a comprehensive test structure.
@@ -103,68 +56,6 @@ tests/
 ├── integration/       # Integration tests (with database)
 ├── fixtures/          # Test data factories
 └── utils/             # Test utilities
-```
-
-### Running Tests
-
-#### Local Development (Recommended for fast iteration)
-
-**Option 1: From project root (recommended)**
-
-```bash
-# Run all tests
-pnpm test:backend
-
-# Run with coverage
-pnpm test:backend:cov
-
-# Run specific test file (pass arguments)
-pnpm test:backend -- tests/unit/models/test_user.py
-```
-
-**Option 2: From backend directory**
-
-```bash
-cd backend
-
-# Run all tests
-pdm run test
-
-# Run with coverage report
-pdm run test-cov
-
-# Run specific test file
-pdm run pytest tests/unit/models/test_user.py
-
-# Run with verbose output
-pdm run pytest -v
-```
-
-#### Docker (Matches production environment)
-
-```bash
-# Make sure backend container is running
-docker-compose up -d backend
-
-# Run tests in the container (using system Python since PDM_NO_VENV=1)
-docker exec visera-backend python -m pytest tests/
-
-# Run with coverage
-docker exec visera-backend python -m pytest --cov=. --cov-report=term tests/
-
-# Or use pdm (if test dependencies are installed)
-docker exec visera-backend pdm run test
-```
-
-**Note**: The Dockerfile installs test dependencies, but uses `PDM_NO_VENV=1` (system Python). Use `python -m pytest` directly for more reliable execution in Docker.
-
-### Test Dependencies
-
-Test dependencies are installed as an optional dependency group:
-
-```bash
-# Install test dependencies (if not already installed)
-pdm install -G test
 ```
 
 ### Writing Tests
@@ -241,144 +132,6 @@ gcloud secrets create database-url \
   --replication-policy="automatic"
 ```
 
-#### Reading a Secret
-
-**Via gcloud CLI:**
-
-```bash
-# Read secret value
-gcloud secrets versions access latest --secret="jwt-secret-key"
-
-# List all secrets
-gcloud secrets list
-
-# View secret metadata
-gcloud secrets describe jwt-secret-key
-```
-
-**Via Cloud Console:**
-
-1. Go to **Secret Manager**
-2. Click on the secret name
-3. Click **"View Secret Value"** (requires appropriate permissions)
-
-#### Updating a Secret
-
-**Via gcloud CLI:**
-
-```bash
-# Create a new version of the secret
-echo -n "new-secret-value" | gcloud secrets versions add jwt-secret-key \
-  --data-file=-
-
-# The latest version will be automatically used by Cloud Run
-```
-
-**Via Cloud Console:**
-
-1. Go to **Secret Manager** → Select secret
-2. Click **"Add New Version"**
-3. Enter new value
-4. Cloud Run will use the latest version automatically
-
-#### Granting Access to Secrets
-
-Cloud Run service account needs Secret Manager Secret Accessor role:
-
-```bash
-# Get your service account email
-SERVICE_ACCOUNT="visera-backend@PROJECT_ID.iam.gserviceaccount.com"
-
-# Grant access
-gcloud secrets add-iam-policy-binding jwt-secret-key \
-  --member="serviceAccount:${SERVICE_ACCOUNT}" \
-  --role="roles/secretmanager.secretAccessor"
-```
-
-Or via Cloud Console:
-
-1. Go to **Secret Manager** → Select secret
-2. Click **"Permissions"** tab
-3. Click **"Grant Access"**
-4. Add service account with **Secret Manager Secret Accessor** role
-
-### Verifying Configuration
-
-After setting environment variables and secrets:
-
-1. **Check in Cloud Run:**
-
-   - Go to your service → **"Revisions"** tab
-   - Click on latest revision
-   - View **"Environment Variables"** section
-
-2. **Check via gcloud CLI:**
-
-```bash
-gcloud run services describe visera-backend \
-  --region=us-central1 \
-  --format="value(spec.template.spec.containers[0].env)"
-```
-
-3. **Test in Application:**
-   - Check application logs for any missing variable errors
-   - The application will raise clear errors if required variables are missing
-
-## Environment Variables
-
-The backend requires the following environment variables. See the root README for a complete list.
-
-**Required Variables:**
-
-- `AUTH_COOKIE_NAME` - Session cookie name (e.g., `dev.sid`)
-- `AUTH_COOKIE_MAX_AGE` - Cookie max age in seconds (e.g., `3600`)
-- `JWT_SECRET_KEY` - Secret key for JWT token signing
-- `JWT_EXPIRE_MINUTES` - JWT token expiration time in minutes
-- `DATABASE_URL` - PostgreSQL connection string
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` - Email configuration for OTP verification
-- `FRONTEND_URL` - Frontend URL for CORS and email links
-- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
-- `ENVIRONMENT` - Environment name (`development` or `production`)
-
-## API Endpoints
-
-### Authentication (`/api/v1/auth`)
-
-- `POST /login` - Authenticate user with email/password
-- `POST /signup` - Create new user account
-- `POST /verify-otp` - Verify email with OTP code
-- `POST /send-otp-email` - Send OTP email for email verification
-- `GET /me` - Get current user information
-- `POST /logout` - Logout and clear session cookie
-
-### Users (`/api/v1/users`)
-
-- `POST /` - Create new user (public endpoint)
-- `DELETE /me` - Soft delete current user's account (GDPR compliant)
-
-### Account Deletion
-
-The `DELETE /api/v1/users/me` endpoint implements GDPR-compliant soft deletion:
-
-- User account is marked as deleted (`deleted_at` timestamp set)
-- Email is obfuscated (hashed and replaced with `deleted_{id}_{hash}@deleted.local`)
-- Password is cleared
-- Session cookie is automatically cleared
-- User data is retained for legal/compliance purposes
-- Soft-deleted users cannot authenticate or access the system
-
-## Session Cookie Configuration
-
-Session cookies are configured via `settings.get_auth_cookie_settings()` which returns:
-
-- `httponly=True` - Prevents JavaScript access (XSS protection)
-- `secure=True` - HTTPS only (required for `SameSite="none"`)
-- `samesite="none"` - Allows cross-origin requests
-- `path="/"` - Cookie available site-wide
-- `domain=None` - Current domain
-
-This configuration is used consistently across all cookie operations (set/delete).
-
 ## Database Migrations
 
 This project uses Alembic for database migrations.
@@ -388,11 +141,7 @@ This project uses Alembic for database migrations.
 After modifying models in `models/`, create a new migration:
 
 ```bash
-# In Docker
 docker exec visera-backend python -m alembic revision --autogenerate -m "Description of changes"
-
-# Locally (if running without Docker)
-pdm run alembic revision --autogenerate -m "Description of changes"
 ```
 
 ### Running Migrations
@@ -400,11 +149,7 @@ pdm run alembic revision --autogenerate -m "Description of changes"
 Migrations run automatically when the backend container starts. To run manually:
 
 ```bash
-# In Docker
 docker exec visera-backend python -m alembic upgrade head
-
-# Locally
-pdm run alembic upgrade head
 ```
 
 ### Migration Commands
