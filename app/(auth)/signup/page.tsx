@@ -4,7 +4,6 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api/client";
-import { useAuth } from "@/lib/auth/hooks";
 import type { User } from "@/lib/types/auth";
 
 export default function SignupPage() {

@@ -1,5 +1,3 @@
-import { clearAuthStorage } from "../auth/storage";
-
 const getApiUrl = (): string => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
   return apiUrl.replace(/\/$/, "");
@@ -14,9 +12,6 @@ export interface ApiError {
  * This is the server-side source of truth for auth state
  */
 function handleAuthError(status: number, errorDetail: string): void {
-  // Clear user storage (cookie is cleared by backend on logout)
-  clearAuthStorage();
-
   // Handle 401 Unauthorized - invalid or expired token
   if (status === 401) {
     // Redirect to login

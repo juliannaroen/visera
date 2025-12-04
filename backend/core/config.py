@@ -14,11 +14,6 @@ def _get_required_env(key: str) -> str:
     return value
 
 
-def _get_optional_env(key: str) -> Optional[str]:
-    """Get optional environment variable"""
-    return os.getenv(key)
-
-
 def _get_required_int_env(key: str) -> int:
     """Get required integer environment variable, raise error if not set or invalid"""
     value = os.getenv(key)

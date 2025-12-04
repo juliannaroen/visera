@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { authApi } from "@/lib/api/auth";
-import { useAuth } from "@/lib/auth/hooks";
 
 function VerifyOtpContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -14,18 +13,13 @@ function VerifyOtpContent() {
   const [isResending, setIsResending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, refreshUser } = useAuth();
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    // Get email from query param or from authenticated user
+    // Get email from query param
     const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(emailParam);
-    } else if (user?.email) {
-      setEmail(user.email);
-    }
-  }, [searchParams, user]);
+    setEmail(emailParam || "");
+  }, [searchParams]);
 
   const handleOtpChange = (index: number, value: string) => {
     // Only allow alphanumeric characters
@@ -113,16 +107,16 @@ function VerifyOtpContent() {
 
     try {
       // Verify OTP - backend will create session and verify email
-      await authApi.verifyOtp(email, code);
-
-      // Refresh user data to get updated verification status
-      await refreshUser();
-
-      // Redirect to dashboard
-      router.push("/home");
+      const response = await authApi.verifyOtp(email, code);
+      if (response.user.is_email_verified) {
+        // Redirect to dashboard
+        router.push("/home");
+      } else {
+        throw new Error("Could not verify email");
+      }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Invalid verification code"
+        err instanceof Error ? err.message : "Email verification failed"
       );
       // Clear OTP inputs on error
       setOtp(["", "", "", "", "", ""]);

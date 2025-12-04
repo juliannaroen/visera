@@ -13,7 +13,7 @@ from services.auth_service import (
     verify_otp_code
 )
 from core.security import create_access_token
-from api.deps import get_current_user, get_verified_user
+from api.deps import get_verified_user
 
 router = APIRouter()
 

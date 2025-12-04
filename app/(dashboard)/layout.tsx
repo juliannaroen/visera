@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/hooks";
 import { Sidebar } from "./common/Sidebar";
 
@@ -10,17 +10,23 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { refreshUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Wait for auth check to complete
-    if (!isLoading && !user) {
-      // Redirect to login with return URL
-      const currentPath = window.location.pathname;
-      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
-    }
-  }, [user, isLoading, router]);
+    const checkAuth = async () => {
+      try {
+        await refreshUser();
+      } catch {
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, [refreshUser, router, pathname]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -36,11 +42,6 @@ export default function DashboardLayout({
         </div>
       </div>
     );
-  }
-
-  // Don't render protected content if not authenticated
-  if (!user) {
-    return null; // Will redirect via useEffect
   }
 
   return (

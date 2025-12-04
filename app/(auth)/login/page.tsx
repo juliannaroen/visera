@@ -11,31 +11,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const { login, isAuthenticated, user, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Redirect if already authenticated and verified
-  // If authenticated but not verified, log them out so they can log in fresh
-  useEffect(() => {
-    // Wait for auth to finish loading
-    if (isLoading) {
-      return;
-    }
-
-    if (isAuthenticated) {
-      // Check if email is verified
-      if (user && user.is_email_verified) {
-        router.push("/home");
-      } else if (user && !user.is_email_verified) {
-        // User is authenticated but not verified, redirect to OTP verification
-        router.push(`/verify-otp?email=${encodeURIComponent(user.email)}`);
-      }
-    }
-  }, [isAuthenticated, user, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
