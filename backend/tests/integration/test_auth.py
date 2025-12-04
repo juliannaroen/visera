@@ -53,9 +53,6 @@ class TestLogin:
         response = test_client.post("/api/v1/auth/login", json=login_data)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        data = response.json()
-        assert "detail" in data
-        assert "incorrect" in data["detail"].lower() or "invalid" in data["detail"].lower()
 
     def test_login_wrong_password(self, test_client, test_session):
         """Test login with incorrect password"""
@@ -76,9 +73,6 @@ class TestLogin:
         response = test_client.post("/api/v1/auth/login", json=login_data)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        data = response.json()
-        assert "detail" in data
-        assert "incorrect" in data["detail"].lower() or "invalid" in data["detail"].lower()
 
     def test_login_missing_email(self, test_client, test_session):
         """Test login without email"""

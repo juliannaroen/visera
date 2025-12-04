@@ -26,14 +26,14 @@ def authenticate_user(db: Session, login_data: LoginRequest) -> LoginResponse:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail="We could not find an account with this email"
         )
 
     # Verify password
     if not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail="Password is incorrect"
         )
 
     # Create access token

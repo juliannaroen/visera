@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const { login, isLoading } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -122,7 +122,7 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="w-full rounded-lg bg-rose-500 px-4 py-3 font-semibold text-white transition-colors duration-300 ease-in-out hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:bg-rose-300 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Signing In..." : "Sign In"}
