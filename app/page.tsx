@@ -6,22 +6,15 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/hooks";
 
 export default function Home() {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Redirect if already authenticated AND verified
+  // Redirect if already authenticated
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (isLoading) {
-      return;
-    }
-
-    // Only redirect to dashboard if user is authenticated AND verified
-    // Unverified users can stay on the landing page
-    if (isAuthenticated && user && user.is_email_verified) {
+    if (isAuthenticated) {
       router.push("/home");
     }
-  }, [isAuthenticated, user, isLoading, router]);
+  }, [isAuthenticated, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-200 via-rose-200 to-orange-200 font-sans">
